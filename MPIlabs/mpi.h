@@ -90,7 +90,7 @@ namespace MPI
 	template<typename T>
 	void Send(const T& val, int dest = 0, int tag = 0, Comm c = MPI_COMM_WORLD)
 	{
-		auto r = ::MPI_Send(reinterpret_cast<void*>(val), sizeof(T), MPI_BYTE, dest, tag, c);
+		auto r = ::MPI_Send(reinterpret_cast<const void*>(&val), sizeof(T), MPI_BYTE, dest, tag, c);
 		if (r != ReturnCode::Success)
 		{
 			::MPI_Abort(c, r);
@@ -113,7 +113,7 @@ namespace MPI
 	T Recv(int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, Comm c = MPI_COMM_WORLD, MPI_Status& status = _dummy_status)
 	{
 		T val{};
-		auto r = ::MPI_Recv(reinterpret_cast<void*>(val), sizeof(T), MPI_BYTE, source, tag, c, &status);
+		auto r = ::MPI_Recv(reinterpret_cast<void*>(&val), sizeof(T), MPI_BYTE, source, tag, c, &status);
 		if (r != ReturnCode::Success)
 		{
 			::MPI_Abort(c, r);
@@ -122,21 +122,28 @@ namespace MPI
 		return val;
 	}
 
-	template<>
-	int Recv(MPI_Status& status, int source, int tag, Comm c)
-	{
-		int val;
-		auto r = ::MPI_Recv(&val, 1, MPI_INT, source, tag, c, &status);
-		if (r != ReturnCode::Success)
-		{
-			::MPI_Abort(c, r);
-			throw Exception(("Error code: " + ::std::to_string(r)).c_str());
-		}
-		return val;
+#define RECV_TYPE_WRAPPER(T, MPI_T) template<>\
+	T Recv(int source, int tag, Comm c, MPI_Status& status)\
+	{\
+		T val;\
+		auto r = ::MPI_Recv(&val, 1, MPI_T, source, tag, c, &status);\
+		if (r != ReturnCode::Success)\
+		{\
+			::MPI_Abort(c, r);\
+			throw Exception(("Error code: " + ::std::to_string(r)).c_str());\
+		}\
+		return val;\
 	}
 
+	RECV_TYPE_WRAPPER(int, MPI_INT)
+		RECV_TYPE_WRAPPER(double, MPI_DOUBLE)
+		RECV_TYPE_WRAPPER(float, MPI_FLOAT)
+		RECV_TYPE_WRAPPER(unsigned int, MPI_UNSIGNED)
 
-	class _Dummy
+#undef RECV_TYPE_WRAPPER
+
+
+		class _Dummy
 	{
 	public:
 		_Dummy() {}

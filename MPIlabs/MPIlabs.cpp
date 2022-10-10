@@ -2,7 +2,9 @@
 
 #include "mpi.h"
 #include <iostream>
-
+#include <cmath>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 using std::cout;
 using std::endl;
@@ -21,11 +23,14 @@ int main(int argc, char** argv)
 
 			int r = MPI::Recv<int>();
 			cout << "Received " << r << endl;
+			double pi = MPI::Recv<double>();
+			cout << "Received " << pi << endl;
 		}
 		break;
 	default:
 		cout << "Sending my id to 0 " << endl;
 		MPI::Send(proc_id);
+		MPI::Send(M_PI);
 		break;
 	}
 	MPI::Finalize();
