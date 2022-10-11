@@ -5,6 +5,7 @@ namespace MPI
 {
 
 	typedef ::MPI_Comm Comm;
+	typedef ::MPI_Status Status;
 	enum  ReturnCode :int
 	{
 		Success = MPI_SUCCESS,
@@ -126,7 +127,7 @@ namespace MPI
 	T Recv(int source, int tag, Comm c, MPI_Status& status)\
 	{\
 		T val;\
-		auto r = ::MPI_Recv(&val, 1, MPI_T, source, tag, c, &status);\
+		auto r = ::MPI_Recv(&val, 1, (MPI_T), source, tag, c, &status);\
 		if (r != ReturnCode::Success)\
 		{\
 			::MPI_Abort(c, r);\
