@@ -40,6 +40,7 @@ void root(int proc_num)
 			}
 		}
 	}
+	cout << "Root complete" << endl;
 }
 
 void branch(int proc_id, int proc_num)

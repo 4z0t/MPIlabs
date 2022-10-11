@@ -111,7 +111,7 @@ namespace MPI
 	}
 
 	template<typename T>
-	T Recv(int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, Comm c = MPI_COMM_WORLD, MPI_Status& status = _dummy_status)
+	T Recv(int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, Comm c = MPI_COMM_WORLD, Status& status = _dummy_status)
 	{
 		T val{};
 		auto r = ::MPI_Recv(reinterpret_cast<void*>(&val), sizeof(T), MPI_BYTE, source, tag, c, &status);
@@ -124,7 +124,7 @@ namespace MPI
 	}
 
 #define RECV_TYPE_WRAPPER(T, MPI_T) template<>\
-	T Recv(int source, int tag, Comm c, MPI_Status& status)\
+	T Recv(int source, int tag, Comm c, Status& status)\
 	{\
 		T val;\
 		auto r = ::MPI_Recv(&val, 1, (MPI_T), source, tag, c, &status);\
