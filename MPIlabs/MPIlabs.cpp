@@ -5,9 +5,21 @@
 #include <cmath>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <vector>
+
+template<class T>
+std::ostream& operator<<(std::ostream& out, const std::vector<T>& v)
+{
+	for (const T& e : v)
+	{
+		out << e << ' ';
+	}
+	return out;
+}
 
 using std::cout;
 using std::endl;
+using std::vector;
 
 const int m = 10;
 
@@ -19,45 +31,6 @@ enum class MSGType :int
 };
 
 
-void root(int proc_num)
-{
-	MPI::Status s;
-	for (int i = 0; i < m; i++)
-	{
-		for (int k = 1; k < proc_num; k++)
-		{
-			int msg = MPI::Recv<int>(k, static_cast<int>(MSGType::Message), MPI_COMM_WORLD, s);
-			cout << "Root recieved " << msg << " from " << s.MPI_SOURCE << endl;
-			for (int j = 1; j < proc_num; j++)
-			{
-				if (j == s.MPI_SOURCE)continue;
-				cout << "Root sending " << msg << " to " << j << " from "<<s.MPI_SOURCE << endl;
-				MPI::Send(msg, j, static_cast<int>(MSGType::Message));
-
-				int response = MPI::Recv<int>(j, static_cast<int>(MSGType::Response));
-				if (response != j)
-					cout << "wrong id" << endl;
-			}
-		}
-	}
-	cout << "Root complete" << endl;
-}
-
-void branch(int proc_id, int proc_num)
-{
-	MPI::Status s;
-	for (int i = 0; i < m; i++)
-	{
-		MPI::Send(i, 0, static_cast<int>(MSGType::Message));
-		for (int j = 2; j < proc_num; j++)
-		{
-			int msg = MPI::Recv<int>(0, static_cast<int>(MSGType::Message), MPI_COMM_WORLD, s);
-			cout << proc_id << " recieved " << msg << " from " << s.MPI_SOURCE << endl;
-			MPI::Send(proc_id, 0, static_cast<int>(MSGType::Response));
-		}
-	}
-	cout << "Sending complete from " << proc_id << endl;
-}
 
 int main(int argc, char** argv)
 {
@@ -66,16 +39,39 @@ int main(int argc, char** argv)
 	MPI::Init(argc, argv);
 	proc_num = MPI::CommSize();
 	proc_id = MPI::CommRank();
+
+	for (int i = 0; i < m; i++)
+	{
+		vector<int> data(proc_num, 0);
+		vector<int> res(proc_num, 0);
+		if (proc_id != 0)
+		{
+			data[proc_id] = proc_id;
+		}
+		MPI::Reduce(data, res, MPI::Operation::Sum);
+
+		if (proc_id == 0)
+		{
+			cout << "Root: \tRecived messages: " << res << '\n';
+		}
+
+		MPI::Bcast(res);
+		if (proc_id != 0)
+		{
+			cout << "Branch: \tRecived messages: " << res << '\n';
+		}
+	}
 	switch (proc_id)
 	{
 	case 0:
-		root(proc_num);
+		cout << "Root complete" << endl;
+
 		break;
 	default:
-		branch(proc_id, proc_num);
+		cout << "Sending complete from " << proc_id << endl;
+
 		break;
 	}
-
 
 	return 0;
 }
