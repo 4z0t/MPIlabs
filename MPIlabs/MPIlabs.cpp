@@ -46,7 +46,7 @@ int main(int argc, char** argv)
 		vector<int> res(proc_num, 0);
 		if (proc_id != 0)
 		{
-			data[proc_id] = proc_id;
+			data[proc_id] = proc_id*(i+1);
 		}
 		MPI::Reduce(data, res, MPI::Operation::Sum);
 
@@ -58,8 +58,9 @@ int main(int argc, char** argv)
 		MPI::Bcast(res);
 		if (proc_id != 0)
 		{
-			cout << "Branch: \tRecived messages: " << res << '\n';
+			cout << "Branch " << proc_id << ": \tRecived messages: " << res << '\n';
 		}
+		MPI::Barrier();
 	}
 	switch (proc_id)
 	{
