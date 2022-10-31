@@ -64,8 +64,8 @@ int main(int argc, char** argv)
 	int proc_num, proc_id;
 
 	MPI::Init(argc, argv);
-	proc_num = MPI::CommSize(MPI_COMM_WORLD);
-	proc_id = MPI::CommRank(MPI_COMM_WORLD);
+	proc_num = MPI::CommSize();
+	proc_id = MPI::CommRank();
 	switch (proc_id)
 	{
 	case 0:
