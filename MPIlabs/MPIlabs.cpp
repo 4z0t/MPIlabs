@@ -52,7 +52,7 @@ int main(int argc, char** argv)
 
 		if (proc_id == 0)
 		{
-			cout << "Root: \tRecived messages: " << res << endl;
+			cout << "Root: \t\tRecived messages: " << res << endl;
 		}
 
 		MPI::Bcast(res);
@@ -61,6 +61,8 @@ int main(int argc, char** argv)
 			cout << "Branch " << proc_id << ": \tRecived messages: " << res << endl;
 		}
 		MPI::Barrier();
+		if (proc_id == 0)
+			cout << '\n';
 	}
 	switch (proc_id)
 	{

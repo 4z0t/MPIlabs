@@ -160,50 +160,26 @@ namespace MPI
 	}
 
 	template<typename T>
-	void Reduce(T send, T recv, int size = 1, Operation op = Operation::Null, int root = 0, Comm c = WORLD)
+	void Reduce(const T* send, T* recv, int size = 1, Operation op = Operation::Null, int root = 0, Comm c = WORLD)
 	{
 
-		_CheckSuccess(::MPI_Reduce(reinterpret_cast<void*>(&send), reinterpret_cast<void*>(&recv), sizeof(T) * size, MPI_BYTE, static_cast<MPI_Op>(op), root, c), c);
+		_CheckSuccess(::MPI_Reduce(reinterpret_cast<const void*>(send), reinterpret_cast<void*>(recv), sizeof(T) * size, MPI_BYTE, static_cast<MPI_Op>(op), root, c), c);
 
 	}
 
 	template<>
-	void Reduce(int* send, int* recv, int size, Operation op, int root, Comm c)
+	void Reduce(const int* send, int* recv, int size, Operation op, int root, Comm c)
 	{
-		_CheckSuccess(::MPI_Reduce(reinterpret_cast<void*>(send), reinterpret_cast<void*>(recv), size, MPI_INT, static_cast<MPI_Op>(op), root, c), c);
+		_CheckSuccess(::MPI_Reduce(reinterpret_cast<const void*>(send), reinterpret_cast<void*>(recv), size, MPI_INT, static_cast<MPI_Op>(op), root, c), c);
 	}
 
 
 	template<typename T>
 	void Reduce(const vector<T>& send, vector<T>& recv, Operation op = Operation::Null, int root = 0, Comm c = WORLD)
 	{
-
-		_CheckSuccess(::MPI_Reduce(
-			reinterpret_cast<const void*>(send.data()),
-			reinterpret_cast<void*>(recv.data()),
-			sizeof(T) * send.size(),
-			MPI_BYTE,
-			static_cast<MPI_Op>(op),
-			root,
-			c
-		), c);
-
+		return Reduce<T>(send.data(), recv.data(), send.size(), op, root, c);
 	}
 
-	template<>
-	void Reduce(const vector<int>& send, vector<int>& recv, Operation op, int root, Comm c)
-	{
-		_CheckSuccess(::MPI_Reduce(
-			reinterpret_cast<const void*>(send.data()),
-			reinterpret_cast<void*>(recv.data()),
-			send.size(),
-			MPI_INT,
-			static_cast<MPI_Op>(op),
-			root,
-			c
-		), c);
-
-	}
 
 	void Barrier(Comm c = WORLD)
 	{
