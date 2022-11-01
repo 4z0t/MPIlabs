@@ -52,13 +52,13 @@ int main(int argc, char** argv)
 
 		if (proc_id == 0)
 		{
-			cout << "Root: \tRecived messages: " << res << '\n';
+			cout << "Root: \tRecived messages: " << res << endl;
 		}
 
 		MPI::Bcast(res);
 		if (proc_id != 0)
 		{
-			cout << "Branch " << proc_id << ": \tRecived messages: " << res << '\n';
+			cout << "Branch " << proc_id << ": \tRecived messages: " << res << endl;
 		}
 		MPI::Barrier();
 	}
