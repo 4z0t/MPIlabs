@@ -2,6 +2,8 @@
 #include <exception>
 #include <string>
 #include <vector>
+#include "mpi_packable.h"
+
 namespace MPI
 {
 	typedef ::MPI_Comm Comm;
@@ -340,6 +342,37 @@ namespace MPI
 		vector<T> res(recv_count, T{});
 		Gather<T>(send.data(), send.size(), res.data(), recv_count / CommSize(c), root, c);
 		return res;
+	}
+
+
+	template<typename T>
+	void Pack(const T& data, void* dest, int dest_size, int* pos, Comm c = WORLD)
+	{
+		_CheckSuccess(::MPI_Pack(
+			reinterpret_cast<const void*>(&data),
+			sizeof(T),
+			MPI_BYTE,
+			dest,
+			dest_size,
+			pos,
+			c
+		), c);
+	}
+
+
+	template<typename T>
+	T UnPack(const void* data, int size, int* pos, Comm c = WORLD)
+	{
+		T res{};
+		_CheckSuccess(::MPI_Unpack(
+			data,
+			size,
+			pos,
+			&res,
+			sizeof(T),
+			MPI_BYTE,
+			c
+		), c);
 	}
 
 

@@ -159,6 +159,7 @@
     <ClInclude Include="mpi.h">
       <FileType>CppCode</FileType>
     </ClInclude>
+    <ClInclude Include="mpi_pack.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
