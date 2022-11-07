@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 		{
 			data[proc_id] = proc_id * (i + 1);
 		}
-		res = MPI::Gather(data, proc_num * proc_num);
+		res = MPI::Gather(data);
 		if (proc_id == 0)
 		{
 			cout << "Root: \t\tRecived messages: " << res << endl;
@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 			}
 		}
 
-		res = MPI::Scatter(res, proc_num);
+		res = MPI::Scatter(res);
 		if (proc_id != 0)
 		{
 			cout << "Branch " << proc_id << ": \tRecived messages: " << res << endl;
