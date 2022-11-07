@@ -310,7 +310,10 @@ namespace MPI
 	template<typename T>
 	vector<T> Gather(const vector<T>& send, int recv_count = 0, int root = 0, Comm c = WORLD)
 	{
-		recv_count = ((recv_count == 0) ? (send.size() * CommSize(c)) : (recv_count));
+		if (recv_count == 0)
+		{
+			recv_count = send.size() * CommSize(c);
+		}
 		vector<T> res(recv_count, T{});
 		Gather<T>(send.data(), send.size(), res.data(), recv_count / CommSize(c), root, c);
 		return res;
