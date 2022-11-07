@@ -219,15 +219,101 @@ namespace MPI
 		return val;\
 	}
 
-	RECV_TYPE_WRAPPER(int, MPI_INT)
-		RECV_TYPE_WRAPPER(double, MPI_DOUBLE)
-		RECV_TYPE_WRAPPER(float, MPI_FLOAT)
-		RECV_TYPE_WRAPPER(unsigned int, MPI_UNSIGNED)
+	RECV_TYPE_WRAPPER(int, MPI_INT);
+	RECV_TYPE_WRAPPER(double, MPI_DOUBLE);
+	RECV_TYPE_WRAPPER(float, MPI_FLOAT);
+	RECV_TYPE_WRAPPER(unsigned int, MPI_UNSIGNED);
 
 #undef RECV_TYPE_WRAPPER
 
 
-		class _Dummy
+
+
+	
+
+
+	template<typename T>
+	void Scatter(const T* send, int send_count, T* recv, int recv_count, int root = 0, Comm c = WORLD)
+	{
+		_CheckSuccess(::MPI_Scatter(
+			reinterpret_cast<const void*>(send),
+			send_count * sizeof(T),
+			MPI_BYTE,
+			reinterpret_cast<void*>(recv),
+			recv_count * sizeof(T),
+			MPI_BYTE,
+			root,
+			c
+		), c);
+	}
+
+	template<>
+	void Scatter(const int* send, int send_count, int* recv, int recv_count, int root, Comm c)
+	{
+		_CheckSuccess(::MPI_Scatter(
+			reinterpret_cast<const void*>(send),
+			send_count,
+			MPI_INT,
+			reinterpret_cast<void*>(recv),
+			recv_count,
+			MPI_INT,
+			root,
+			c
+		), c);
+	}
+
+	template<typename T>
+	vector<T> Scatter(const vector<T>& send, int recv_count, int root = 0, Comm c = WORLD)
+	{
+		vector<T> res(recv_count, T{});
+		Scatter<T>(send.data(), send.size(), res.data(), recv_count, root, c);
+		return res;
+	}
+
+
+
+	template<typename T>
+	void Gather(const T* send, int send_count, T* recv, int recv_count, int root = 0, Comm c = WORLD)
+	{
+		_CheckSuccess(::MPI_Gather(
+			reinterpret_cast<const void*>(send),
+			send_count * sizeof(T),
+			MPI_BYTE,
+			reinterpret_cast<void*>(recv),
+			recv_count * sizeof(T),
+			MPI_BYTE,
+			root,
+			c
+		), c);
+	}
+
+	template<>
+	void Gather(const int* send, int send_count, int* recv, int recv_count, int root, Comm c )
+	{
+		_CheckSuccess(::MPI_Gather(
+			reinterpret_cast<const void*>(send),
+			send_count ,
+			MPI_INT,
+			reinterpret_cast<void*>(recv),
+			recv_count ,
+			MPI_INT,
+			root,
+			c
+		), c);
+	}
+
+
+	template<typename T>
+	vector<T> Gather(const vector<T>& send, int recv_count, int root = 0, Comm c = WORLD)
+	{
+		vector<T> res(recv_count, T{});
+		Gather<T>(send.data(), send.size(), res.data(), recv_count, root, c);
+		return res;
+	}
+
+
+
+	class _Dummy
 	{
 	public:
 		_Dummy() {}
