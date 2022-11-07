@@ -43,19 +43,26 @@ int main(int argc, char** argv)
 	for (int i = 0; i < m; i++)
 	{
 		vector<int> data(proc_num, 0);
-		vector<int> res(proc_num, 0);
+		vector<int> res;
 		if (proc_id != 0)
 		{
-			data[proc_id] = proc_id*(i+1);
+			data[proc_id] = proc_id * (i + 1);
 		}
-		MPI::Reduce(data, res, MPI::Operation::Sum);
-
+		res = MPI::Gather(data, proc_num * proc_num);
 		if (proc_id == 0)
 		{
 			cout << "Root: \t\tRecived messages: " << res << endl;
+			//combine
+			for (int j = 0; j < proc_num; j++)
+			{
+				for (int k = 0; k < proc_num; k++)
+				{
+					res[k + j * proc_num] = res[k + k * proc_num];
+				}
+			}
 		}
 
-		MPI::Bcast(res);
+		res = MPI::Scatter(res, proc_num);
 		if (proc_id != 0)
 		{
 			cout << "Branch " << proc_id << ": \tRecived messages: " << res << endl;

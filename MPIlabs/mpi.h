@@ -229,7 +229,7 @@ namespace MPI
 
 
 
-	
+
 
 
 	template<typename T>
@@ -266,7 +266,7 @@ namespace MPI
 	vector<T> Scatter(const vector<T>& send, int recv_count, int root = 0, Comm c = WORLD)
 	{
 		vector<T> res(recv_count, T{});
-		Scatter<T>(send.data(), send.size(), res.data(), recv_count, root, c);
+		Scatter<T>(send.data(), send.size() / CommSize(c), res.data(), recv_count, root, c);
 		return res;
 	}
 
@@ -288,14 +288,14 @@ namespace MPI
 	}
 
 	template<>
-	void Gather(const int* send, int send_count, int* recv, int recv_count, int root, Comm c )
+	void Gather(const int* send, int send_count, int* recv, int recv_count, int root, Comm c)
 	{
 		_CheckSuccess(::MPI_Gather(
 			reinterpret_cast<const void*>(send),
-			send_count ,
+			send_count,
 			MPI_INT,
 			reinterpret_cast<void*>(recv),
-			recv_count ,
+			recv_count,
 			MPI_INT,
 			root,
 			c
@@ -307,7 +307,7 @@ namespace MPI
 	vector<T> Gather(const vector<T>& send, int recv_count, int root = 0, Comm c = WORLD)
 	{
 		vector<T> res(recv_count, T{});
-		Gather<T>(send.data(), send.size(), res.data(), recv_count, root, c);
+		Gather<T>(send.data(), send.size(), res.data(), recv_count / CommSize(c), root, c);
 		return res;
 	}
 
