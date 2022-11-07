@@ -31,6 +31,7 @@ namespace MPI
 
 	enum class Types : MPI_Datatype
 	{
+		Byte = MPI_BYTE,
 		Int = MPI_INT,
 		Char = MPI_CHAR,
 		UnsignedChar = MPI_UNSIGNED_CHAR,
@@ -156,21 +157,43 @@ namespace MPI
 	template<>
 	void Bcast(int* val, int size, int root, Comm c)
 	{
-		_CheckSuccess(::MPI_Bcast(reinterpret_cast<void*>(val), size, MPI_INT, root, c), c);
+		_CheckSuccess(::MPI_Bcast(
+			reinterpret_cast<void*>(val),
+			size,
+			MPI_INT,
+			root,
+			c
+		), c);
 	}
 
 	template<typename T>
 	void Reduce(const T* send, T* recv, int size = 1, Operation op = Operation::Null, int root = 0, Comm c = WORLD)
 	{
 
-		_CheckSuccess(::MPI_Reduce(reinterpret_cast<const void*>(send), reinterpret_cast<void*>(recv), sizeof(T) * size, MPI_BYTE, static_cast<MPI_Op>(op), root, c), c);
+		_CheckSuccess(::MPI_Reduce(
+			reinterpret_cast<const void*>(send),
+			reinterpret_cast<void*>(recv),
+			sizeof(T) * size,
+			MPI_BYTE,
+			static_cast<MPI_Op>(op),
+			root,
+			c
+		), c);
 
 	}
 
 	template<>
 	void Reduce(const int* send, int* recv, int size, Operation op, int root, Comm c)
 	{
-		_CheckSuccess(::MPI_Reduce(reinterpret_cast<const void*>(send), reinterpret_cast<void*>(recv), size, MPI_INT, static_cast<MPI_Op>(op), root, c), c);
+		_CheckSuccess(::MPI_Reduce(
+			reinterpret_cast<const void*>(send),
+			reinterpret_cast<void*>(recv),
+			size,
+			MPI_INT,
+			static_cast<MPI_Op>(op),
+			root,
+			c
+		), c);
 	}
 
 
