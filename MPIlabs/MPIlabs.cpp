@@ -6,7 +6,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>
-#define __PRINT__VEC__ true
+#define __PRINT__VEC__ false
 
 template<class T>
 std::ostream& operator<<(std::ostream& out, const std::vector<T>& v)
@@ -205,3 +205,99 @@ int main(int argc, char** argv)
 }
 
 
+
+#include <iostream>
+#include <tuple>
+
+
+template <class... Ts>
+struct Packed;
+
+template <size_t Index, typename _Packed>
+struct _PackElem;
+
+template <>
+struct Packed<>
+{
+	constexpr Packed() = default;
+	constexpr Packed(const Packed&) {};
+
+	constexpr Packed& operator=(const Packed&) = default;
+
+};
+
+
+template <typename T>
+struct _PackVal
+{
+	T _val;
+};
+
+
+template <size_t Index, typename _Packed>
+struct _PackElem<Index, const _Packed> :_PackElem<Index, _Packed>
+{
+	using Base = _PackElem<Index, _Packed>;
+	using type = const typename Base::type;
+};
+
+
+
+
+template < typename T, typename ...Ts>
+struct _PackElem<0, Packed< T, Ts...>>
+{
+	using type = T;
+	using Ptype = Packed<T, Ts...>;
+};
+
+template <size_t Index, typename T, typename ...Ts>
+struct _PackElem < Index, Packed<T, Ts...>> : _PackElem< Index - 1, Packed< Ts...>> {};
+
+
+template <size_t Index, class... _Ts>
+constexpr  const  typename _PackElem<Index, Packed<_Ts...>>::type& Get(const Packed< _Ts...>& p) noexcept {
+	using Ptype = typename _PackElem<Index, Packed< _Ts...>>::Ptype;
+	return static_cast<const Ptype&>(p)._data._val;
+}
+
+template <size_t Index, class... Ts>
+constexpr typename _PackElem<Index, Packed<Ts...>>::type& Get(Packed< Ts...>& p) noexcept {
+	using Ptype = typename _PackElem<Index, Packed< Ts...>>::Ptype;
+	return static_cast<Ptype&>(p)._data._val;
+}
+
+
+template <typename T, typename ... Ts>
+struct Packed<T, Ts ...> : public Packed<Ts...>
+{
+public:
+	using _Base = Packed < Ts...>;
+
+
+
+
+	template <size_t Index, class... _Ts>
+	friend constexpr const  typename _PackElem<Index, Packed<_Ts...>>::type& Get(const Packed< _Ts...>& p) noexcept;
+
+	template <size_t Index, class... _Ts>
+	friend constexpr typename _PackElem<Index, Packed<_Ts...>>::type& Get(const Packed< _Ts...>& p)noexcept;
+
+
+	_PackVal<T> _data;
+};
+
+
+
+
+
+//int main()
+//{
+//	Packed<int, float>a;
+//
+//	Get<0>(a) = 4;
+//	Get<1>(a) = 0.5;
+//	std::cout << Get<0>(a) << std::endl;
+//	std::cout << Get<1>(a);
+//}
+//
