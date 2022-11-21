@@ -118,16 +118,49 @@ namespace MPI
 	}
 
 	template<typename T>
+	void Send(const T* val, int size = 1, int dest = 0, int tag = 0, Comm c = MPI_COMM_WORLD)
+	{
+		_CheckSuccess(::MPI_Send(reinterpret_cast<const void*>(val), sizeof(T) * size, MPI_BYTE, dest, tag, c), c);
+
+	}
+
+	template<>
+	void Send(const double* val, int size, int dest, int tag, Comm c)
+	{
+		_CheckSuccess(::MPI_Send(reinterpret_cast<const void*>(val), size, MPI_DOUBLE, dest, tag, c), c);
+	}
+
+	template<typename T>
 	void Send(const T& val, int dest = 0, int tag = 0, Comm c = MPI_COMM_WORLD)
 	{
 		_CheckSuccess(::MPI_Send(reinterpret_cast<const void*>(&val), sizeof(T), MPI_BYTE, dest, tag, c), c);
 	}
 
 	template<>
+	void Send(const double& val, int dest, int tag, Comm c)
+	{
+		_CheckSuccess(::MPI_Send(&val, 1, MPI_DOUBLE, dest, tag, c), c);
+	}
+
+
+	template<>
 	void Send(const int& val, int dest, int tag, Comm c)
 	{
 		_CheckSuccess(::MPI_Send(&val, 1, MPI_INT, dest, tag, c), c);
 	}
+
+	template<typename T>
+	void Send(const vector<T>& v, int dest = 0, int tag = 0, Comm c = MPI_COMM_WORLD)
+	{
+		Send(v.data(), v.size(), dest, tag, c);
+	}
+
+	template<>
+	void Send(const vector<double>& v, int dest, int tag, Comm c)
+	{
+		Send(v.data(), v.size(), dest, tag, c);
+	}
+
 
 	template<typename T>
 	T Recv(int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, Comm c = WORLD, Status& status = _dummy_status)
@@ -138,9 +171,35 @@ namespace MPI
 	}
 
 	template<typename T>
-	void Bcast(T* val, int size, int root = 0, Comm c = WORLD)
+	void Recv(vector<T>& v, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, Comm c = WORLD, Status& status = _dummy_status)
+	{
+		_CheckSuccess(::MPI_Recv(reinterpret_cast<void*>(v.data()), sizeof(T) * v.size(), MPI_BYTE, source, tag, c, &status), c);
+	}
+
+	template<>
+	void Recv(vector<double>& v, int source, int tag, Comm c, Status& status)
+	{
+		_CheckSuccess(::MPI_Recv(reinterpret_cast<void*>(v.data()), v.size(), MPI_DOUBLE, source, tag, c, &status), c);
+	}
+
+
+
+	template<typename T>
+	void Bcast(T* val, int size = 1, int root = 0, Comm c = WORLD)
 	{
 		_CheckSuccess(::MPI_Bcast(reinterpret_cast<void*>(val), sizeof(T) * size, MPI_BYTE, root, c), c);
+	}
+
+	template<>
+	void Bcast(int* val, int size, int root, Comm c)
+	{
+		_CheckSuccess(::MPI_Bcast(
+			reinterpret_cast<void*>(val),
+			size,
+			MPI_INT,
+			root,
+			c
+		), c);
 	}
 
 	template<typename T>
@@ -156,17 +215,7 @@ namespace MPI
 	}
 
 
-	template<>
-	void Bcast(int* val, int size, int root, Comm c)
-	{
-		_CheckSuccess(::MPI_Bcast(
-			reinterpret_cast<void*>(val),
-			size,
-			MPI_INT,
-			root,
-			c
-		), c);
-	}
+
 
 	template<typename T>
 	void Reduce(const T* send, T* recv, int size = 1, Operation op = Operation::Null, int root = 0, Comm c = WORLD)
@@ -374,6 +423,57 @@ namespace MPI
 			c
 		), c);
 	}
+
+
+	//Immediate ops
+
+	namespace Immediate
+	{
+		typedef ::MPI_Request Request;
+
+
+		template<typename T>
+		Request Recv(T* buff, int size, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, Comm c = WORLD)
+		{
+			Request req;
+			_CheckSuccess(::MPI_Irecv(reinterpret_cast<void*>(buff), sizeof(T) * size, MPI_BYTE, source, tag, c, &req), c);
+			return req;
+		}
+
+		template<>
+		Request Recv(int* buff, int size, int source, int tag, Comm c)
+		{
+			Request req;
+			_CheckSuccess(::MPI_Irecv(reinterpret_cast<void*>(buff), size, MPI_INT, source, tag, c, &req), c);
+			return req;
+		}
+
+		template<>
+		Request Recv(double* buff, int size, int source, int tag, Comm c)
+		{
+			Request req;
+			_CheckSuccess(::MPI_Irecv(reinterpret_cast<void*>(buff), size, MPI_DOUBLE, source, tag, c, &req), c);
+			return req;
+		}
+
+		template<typename T>
+		Request Recv(vector<T>& v, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, Comm c = WORLD)
+		{
+			return Recv<T>(v.data(), v.size(), source, tag, c);
+		}
+
+
+
+
+		bool Test(Request& req, Status& status = _dummy_status)
+		{
+			int flag;
+			_CheckSuccess(::MPI_Test(&req, &flag, &status), WORLD);
+			return flag != 0;
+		}
+
+	}
+
 
 
 

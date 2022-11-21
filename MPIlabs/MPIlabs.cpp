@@ -6,18 +6,22 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>
+#define __PRINT__VEC__ true
 
 template<class T>
 std::ostream& operator<<(std::ostream& out, const std::vector<T>& v)
 {
+#if __PRINT__VEC__ 
 	for (const T& e : v)
 	{
 		out << e << ' ';
 	}
+#endif
 	return out;
 }
 
 using std::cout;
+using std::cin;
 using std::endl;
 using std::vector;
 
@@ -31,6 +35,152 @@ enum class MSGType :int
 };
 
 
+template<class T>
+vector<T> Mult(const vector<T>& p1, const vector<T>& p2)
+{
+	vector<T> p3(p1.size() + p2.size() - 1, T{});
+
+	for (size_t i = 0; i < p1.size(); i++)
+	{
+		for (size_t j = 0; j < p2.size(); j++)
+		{
+			p3[i + j] += p1[i] * p2[j];
+		}
+	}
+	return p3;
+}
+
+
+
+vector<double> MakeRandomPoly(int power, double maxv, double minv)
+{
+	vector<double> p(power + 1, 0.0);
+	for (auto& v : p)
+	{
+		double f = (double)(std::rand()) / RAND_MAX;
+		v = minv + f * (maxv - minv);
+	}
+	return p;
+}
+
+template<typename T>
+struct ReqestedVector {
+	MPI::Immediate::Request request;
+	std::vector<T> data;
+};
+
+
+bool AllComplete(const vector<ReqestedVector<double>>& rvs)
+{
+	for (const auto& rv : rvs)
+	{
+		if (rv.data.size() != 0)return false;
+	}
+	return true;
+}
+
+void Root(int proc_num)
+{
+	int n;
+	int p;
+	cout << "Enter poly count ";
+	cin >> n;
+	cout << "Enter poly power ";
+	cin >> p;
+
+
+	vector<vector<double>> polys(n);
+	for (int i = 0; i < n; i++)
+		polys[i] = MakeRandomPoly(p, 0.0, 10.0);
+
+	vector<double> res;
+
+	vector<ReqestedVector<double>>  requests(proc_num - 1);
+
+
+	while (polys.size() > 1 || !AllComplete(requests))
+	{
+		for (int i = 1; i < proc_num; i++)
+		{
+			auto& req = requests[i - 1];
+			if (req.data.size() != 0)// was a request
+			{
+				if (MPI::Immediate::Test(req.request))//check request
+				{
+					cout << "ROOT: got\n\t" << req.data << endl;
+					polys.push_back(req.data);
+					req.data.clear();
+				}
+				else
+				{
+					continue;
+				}
+			}
+			if (polys.size() >= 2)
+			{
+				cout << "ROOT: sending to " << i << endl;
+				auto p1 = polys.back();
+				polys.pop_back();
+				auto p2 = polys.back();
+				polys.pop_back();
+
+				MPI::Send(p1.size(), i);
+				MPI::Send(p2.size(), i);
+
+				cout << "\t" << p1 << "\n\t" << p2 << endl;
+				MPI::Send(p1, i);
+				MPI::Send(p2, i);
+
+				req.data.resize(p1.size() + p2.size() - 1, 0.0);
+
+				req.request = MPI::Immediate::Recv(req.data, i);
+			}
+		}
+	}
+
+	for (int i = 1; i < proc_num; i++)
+	{
+		MPI::Send(0, i);
+	}
+
+	cout << polys.back() << "\n";
+	cout << "Root complete" << endl;
+
+
+
+}
+
+void Branch(int id)
+{
+	int p1_size;
+	int p2_size;
+
+
+	vector<double> p1;
+	vector<double> p2;
+	vector<double> p3;
+
+	while (true)
+	{
+		p1_size = MPI::Recv<int>();
+		if (p1_size == 0)break;
+		p2_size = MPI::Recv<int>();
+
+		p1.resize(p1_size);
+		p2.resize(p2_size);
+
+		MPI::Recv(p1);
+		MPI::Recv(p2);
+		cout << "Branch " << id << ": recv:\n\t" << p1 << "\n\t" << p2 << endl;
+
+		p3 = Mult(p1, p2);
+
+		cout << "Branch " << id << " done:\n\t" << p3 << endl;
+		MPI::Send(p3);
+	}
+	cout << "Branch " << id << " complete" << endl;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -40,46 +190,14 @@ int main(int argc, char** argv)
 	proc_num = MPI::CommSize();
 	proc_id = MPI::CommRank();
 
-	for (int i = 0; i < m; i++)
-	{
-		vector<int> data(proc_num, 0);
-		vector<int> res;
-		if (proc_id != 0)
-		{
-			data[proc_id] = proc_id * (i + 1);
-		}
-		res = MPI::Gather(data);
-		if (proc_id == 0)
-		{
-			cout << "Root: \t\tRecived messages: " << res << endl;
-			//combine
-			for (int j = 0; j < proc_num; j++)
-			{
-				for (int k = 0; k < proc_num; k++)
-				{
-					res[k + j * proc_num] = res[k + k * proc_num];
-				}
-			}
-		}
 
-		res = MPI::Scatter(res);
-		if (proc_id != 0)
-		{
-			cout << "Branch " << proc_id << ": \tRecived messages: " << res << endl;
-		}
-		MPI::Barrier();
-		if (proc_id == 0)
-			cout << '\n';
-	}
 	switch (proc_id)
 	{
 	case 0:
-		cout << "Root complete" << endl;
-
+		Root(proc_num);
 		break;
 	default:
-		cout << "Sending complete from " << proc_id << endl;
-
+		Branch(proc_id);
 		break;
 	}
 

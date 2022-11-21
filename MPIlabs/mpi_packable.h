@@ -7,25 +7,25 @@
 namespace MPI
 {
 
-	class PackedData
-	{
-	public:
-		PackedData();
-		~PackedData();
+	//class PackedData
+	//{
+	//public:
+	//	PackedData();
+	//	~PackedData();
 
-	private:
+	//private:
 
-	};
+	//};
 
-	PackedData::PackedData()
-	{
+	//PackedData::PackedData()
+	//{
 
-	}
+	//}
 
-	PackedData::~PackedData()
-	{
+	//PackedData::~PackedData()
+	//{
 
-	}
+	//}
 
 
 }

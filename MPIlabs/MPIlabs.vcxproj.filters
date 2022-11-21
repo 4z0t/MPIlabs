@@ -18,12 +18,12 @@
     <ClCompile Include="MPIlabs.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="mpi_packable.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mpi.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="mpi_pack.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
