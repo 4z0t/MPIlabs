@@ -140,7 +140,7 @@ void Root(int proc_num)
 
 	for (int i = 1; i < proc_num; i++)
 	{
-		MPI::Send(0, i);
+		MPI::Send<int>(0, i);
 	}
 
 	cout << polys.back() << "\n";
@@ -206,6 +206,7 @@ int main(int argc, char** argv)
 
 
 
+
 #include <iostream>
 #include <tuple>
 
@@ -241,9 +242,6 @@ struct _PackElem<Index, const _Packed> :_PackElem<Index, _Packed>
 	using type = const typename Base::type;
 };
 
-
-
-
 template < typename T, typename ...Ts>
 struct _PackElem<0, Packed< T, Ts...>>
 {
@@ -255,9 +253,9 @@ template <size_t Index, typename T, typename ...Ts>
 struct _PackElem < Index, Packed<T, Ts...>> : _PackElem< Index - 1, Packed< Ts...>> {};
 
 
-template <size_t Index, class... _Ts>
-constexpr  const  typename _PackElem<Index, Packed<_Ts...>>::type& Get(const Packed< _Ts...>& p) noexcept {
-	using Ptype = typename _PackElem<Index, Packed< _Ts...>>::Ptype;
+template <size_t Index, class... Ts>
+constexpr  const  typename _PackElem<Index, Packed<Ts...>>::type& Get(const Packed< Ts...>& p) noexcept {
+	using Ptype = typename _PackElem<Index, Packed< Ts...>>::Ptype;
 	return static_cast<const Ptype&>(p)._data._val;
 }
 
@@ -274,14 +272,11 @@ struct Packed<T, Ts ...> : public Packed<Ts...>
 public:
 	using _Base = Packed < Ts...>;
 
+	template <size_t Index, class... Ts>
+	friend constexpr const  typename _PackElem<Index, Packed<Ts...>>::type& Get(const Packed< Ts...>& p) noexcept;
 
-
-
-	template <size_t Index, class... _Ts>
-	friend constexpr const  typename _PackElem<Index, Packed<_Ts...>>::type& Get(const Packed< _Ts...>& p) noexcept;
-
-	template <size_t Index, class... _Ts>
-	friend constexpr typename _PackElem<Index, Packed<_Ts...>>::type& Get(const Packed< _Ts...>& p)noexcept;
+	template <size_t Index, class... Ts>
+	friend constexpr typename _PackElem<Index, Packed<Ts...>>::type& Get(const Packed< Ts...>& p)noexcept;
 
 
 	_PackVal<T> _data;
@@ -290,14 +285,16 @@ public:
 
 
 
+/*
+int main()
+{
+	Packed<int, float, int>a;
 
-//int main()
-//{
-//	Packed<int, float>a;
-//
-//	Get<0>(a) = 4;
-//	Get<1>(a) = 0.5;
-//	std::cout << Get<0>(a) << std::endl;
-//	std::cout << Get<1>(a);
-//}
-//
+	Get<0>(a) = 4;
+	Get<1>(a) = 0.5;
+	Get<2>(a) = 5;
+	std::cout << Get<0>(a) << std::endl;
+	std::cout << Get<1>(a);
+}
+*/
+
