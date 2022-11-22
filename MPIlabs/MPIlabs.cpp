@@ -6,7 +6,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>
-#define __PRINT__VEC__ false
+#define __PRINT__VEC__ true
 
 template<class T>
 std::ostream& operator<<(std::ostream& out, const std::vector<T>& v)
@@ -124,8 +124,8 @@ void Root(int proc_num)
 				auto p2 = polys.back();
 				polys.pop_back();
 
-				MPI::Send(p1.size(), i);
-				MPI::Send(p2.size(), i);
+				MPI::Send<int>(p1.size(), i);
+				MPI::Send<int>(p2.size(), i);
 
 				cout << "\t" << p1 << "\n\t" << p2 << endl;
 				MPI::Send(p1, i);
