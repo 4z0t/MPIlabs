@@ -6,7 +6,7 @@
 
 namespace MPI
 {
-	typedef ::MPI_Comm Comm;
+	typedef ::MPI_Comm CommId;
 	typedef ::MPI_Status Status;
 	typedef ::MPI_Request Request;
 	typedef ::MPI_Group GroupId;
@@ -54,10 +54,10 @@ namespace MPI
 		MPI_WCHAR,*/
 	};
 
-	const Comm COMM_WORLD = MPI_COMM_WORLD;
-	const Comm COMM_EMPTY = MPI_COMM_NULL;
+	const CommId COMM_WORLD = MPI_COMM_WORLD;
+	const CommId COMM_EMPTY = MPI_COMM_NULL;
 
-	void _CheckSuccess(int result, Comm c = COMM_WORLD)
+	void _CheckSuccess(int result, CommId c = COMM_WORLD)
 	{
 		if (result != ReturnCode::Success)
 		{
@@ -104,7 +104,7 @@ namespace MPI
 	}
 
 
-	int CommRank(Comm c = MPI_COMM_WORLD)
+	int CommRank(CommId c = MPI_COMM_WORLD)
 	{
 		int rank;
 		_CheckSuccess(::MPI_Comm_rank(c, &rank), c);
@@ -112,7 +112,7 @@ namespace MPI
 	}
 
 
-	int CommSize(Comm c = MPI_COMM_WORLD)
+	int CommSize(CommId c = MPI_COMM_WORLD)
 	{
 		int size;
 		_CheckSuccess(::MPI_Comm_size(c, &size), c);
@@ -120,52 +120,52 @@ namespace MPI
 	}
 
 	template<typename T>
-	void Send(const T* val, int size = 1, int dest = 0, int tag = 0, Comm c = MPI_COMM_WORLD)
+	void Send(const T* val, int size = 1, int dest = 0, int tag = 0, CommId c = MPI_COMM_WORLD)
 	{
 		_CheckSuccess(::MPI_Send(reinterpret_cast<const void*>(val), sizeof(T) * size, MPI_BYTE, dest, tag, c), c);
 
 	}
 
 	template<>
-	void Send(const double* val, int size, int dest, int tag, Comm c)
+	void Send(const double* val, int size, int dest, int tag, CommId c)
 	{
 		_CheckSuccess(::MPI_Send(reinterpret_cast<const void*>(val), size, MPI_DOUBLE, dest, tag, c), c);
 	}
 
 	template<typename T>
-	void Send(const T& val, int dest = 0, int tag = 0, Comm c = MPI_COMM_WORLD)
+	void Send(const T& val, int dest = 0, int tag = 0, CommId c = MPI_COMM_WORLD)
 	{
 		_CheckSuccess(::MPI_Send(reinterpret_cast<const void*>(&val), sizeof(T), MPI_BYTE, dest, tag, c), c);
 	}
 
 	template<>
-	void Send(const double& val, int dest, int tag, Comm c)
+	void Send(const double& val, int dest, int tag, CommId c)
 	{
 		_CheckSuccess(::MPI_Send(&val, 1, MPI_DOUBLE, dest, tag, c), c);
 	}
 
 
 	template<>
-	void Send(const int& val, int dest, int tag, Comm c)
+	void Send(const int& val, int dest, int tag, CommId c)
 	{
 		_CheckSuccess(::MPI_Send(&val, 1, MPI_INT, dest, tag, c), c);
 	}
 
 	template<typename T>
-	void Send(const vector<T>& v, int dest = 0, int tag = 0, Comm c = MPI_COMM_WORLD)
+	void Send(const vector<T>& v, int dest = 0, int tag = 0, CommId c = MPI_COMM_WORLD)
 	{
 		Send(v.data(), v.size(), dest, tag, c);
 	}
 
 	template<>
-	void Send(const vector<double>& v, int dest, int tag, Comm c)
+	void Send(const vector<double>& v, int dest, int tag, CommId c)
 	{
 		Send(v.data(), v.size(), dest, tag, c);
 	}
 
 
 	template<typename T>
-	T Recv(int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, Comm c = COMM_WORLD, Status& status = _dummy_status)
+	T Recv(int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, CommId c = COMM_WORLD, Status& status = _dummy_status)
 	{
 		T val{};
 		_CheckSuccess(::MPI_Recv(reinterpret_cast<void*>(&val), sizeof(T), MPI_BYTE, source, tag, c, &status), c);
@@ -173,13 +173,13 @@ namespace MPI
 	}
 
 	template<typename T>
-	void Recv(vector<T>& v, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, Comm c = COMM_WORLD, Status& status = _dummy_status)
+	void Recv(vector<T>& v, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, CommId c = COMM_WORLD, Status& status = _dummy_status)
 	{
 		_CheckSuccess(::MPI_Recv(reinterpret_cast<void*>(v.data()), sizeof(T) * v.size(), MPI_BYTE, source, tag, c, &status), c);
 	}
 
 	template<>
-	void Recv(vector<double>& v, int source, int tag, Comm c, Status& status)
+	void Recv(vector<double>& v, int source, int tag, CommId c, Status& status)
 	{
 		_CheckSuccess(::MPI_Recv(reinterpret_cast<void*>(v.data()), v.size(), MPI_DOUBLE, source, tag, c, &status), c);
 	}
@@ -187,13 +187,13 @@ namespace MPI
 
 
 	template<typename T>
-	void Bcast(T* val, int size = 1, int root = 0, Comm c = COMM_WORLD)
+	void Bcast(T* val, int size = 1, int root = 0, CommId c = COMM_WORLD)
 	{
 		_CheckSuccess(::MPI_Bcast(reinterpret_cast<void*>(val), sizeof(T) * size, MPI_BYTE, root, c), c);
 	}
 
 	template<>
-	void Bcast(int* val, int size, int root, Comm c)
+	void Bcast(int* val, int size, int root, CommId c)
 	{
 		_CheckSuccess(::MPI_Bcast(
 			reinterpret_cast<void*>(val),
@@ -205,13 +205,13 @@ namespace MPI
 	}
 
 	template<typename T>
-	void Bcast(vector<T>& v, int root = 0, Comm c = COMM_WORLD)
+	void Bcast(vector<T>& v, int root = 0, CommId c = COMM_WORLD)
 	{
 		_CheckSuccess(::MPI_Bcast(reinterpret_cast<void*>(v.data()), sizeof(T) * v.size(), MPI_BYTE, root, c), c);
 	}
 
 	template<>
-	void Bcast(vector<int>& v, int root, Comm c)
+	void Bcast(vector<int>& v, int root, CommId c)
 	{
 		_CheckSuccess(::MPI_Bcast(reinterpret_cast<void*>(v.data()), v.size(), MPI_INT, root, c), c);
 	}
@@ -220,7 +220,7 @@ namespace MPI
 
 
 	template<typename T>
-	void Reduce(const T* send, T* recv, int size = 1, Operation op = Operation::Null, int root = 0, Comm c = COMM_WORLD)
+	void Reduce(const T* send, T* recv, int size = 1, Operation op = Operation::Null, int root = 0, CommId c = COMM_WORLD)
 	{
 
 		_CheckSuccess(::MPI_Reduce(
@@ -236,7 +236,7 @@ namespace MPI
 	}
 
 	template<>
-	void Reduce(const int* send, int* recv, int size, Operation op, int root, Comm c)
+	void Reduce(const int* send, int* recv, int size, Operation op, int root, CommId c)
 	{
 		_CheckSuccess(::MPI_Reduce(
 			reinterpret_cast<const void*>(send),
@@ -251,13 +251,13 @@ namespace MPI
 
 
 	template<typename T>
-	void Reduce(const vector<T>& send, vector<T>& recv, Operation op = Operation::Null, int root = 0, Comm c = COMM_WORLD)
+	void Reduce(const vector<T>& send, vector<T>& recv, Operation op = Operation::Null, int root = 0, CommId c = COMM_WORLD)
 	{
 		return Reduce<T>(send.data(), recv.data(), send.size(), op, root, c);
 	}
 
 
-	void Barrier(Comm c = COMM_WORLD)
+	void Barrier(CommId c = COMM_WORLD)
 	{
 		_CheckSuccess(::MPI_Barrier(c), c);
 	}
@@ -288,7 +288,7 @@ namespace MPI
 
 
 #define RECV_TYPE_WRAPPER(T, MPI_T) template<>\
-	T Recv(int source, int tag, Comm c, Status& status)\
+	T Recv(int source, int tag, CommId c, Status& status)\
 	{\
 		T val;\
 		_CheckSuccess(::MPI_Recv(&val, 1, (MPI_T), source, tag, c, &status),c);\
@@ -309,7 +309,7 @@ namespace MPI
 
 
 	template<typename T>
-	void Scatter(const T* send, int send_count, T* recv, int recv_count, int root = 0, Comm c = COMM_WORLD)
+	void Scatter(const T* send, int send_count, T* recv, int recv_count, int root = 0, CommId c = COMM_WORLD)
 	{
 		_CheckSuccess(::MPI_Scatter(
 			reinterpret_cast<const void*>(send),
@@ -324,7 +324,7 @@ namespace MPI
 	}
 
 	template<>
-	void Scatter(const int* send, int send_count, int* recv, int recv_count, int root, Comm c)
+	void Scatter(const int* send, int send_count, int* recv, int recv_count, int root, CommId c)
 	{
 		_CheckSuccess(::MPI_Scatter(
 			reinterpret_cast<const void*>(send),
@@ -339,7 +339,7 @@ namespace MPI
 	}
 
 	template<typename T>
-	vector<T> Scatter(const vector<T>& send, int recv_count = 0, int root = 0, Comm c = COMM_WORLD)
+	vector<T> Scatter(const vector<T>& send, int recv_count = 0, int root = 0, CommId c = COMM_WORLD)
 	{
 		if (recv_count == 0)
 		{
@@ -353,7 +353,7 @@ namespace MPI
 
 
 	template<typename T>
-	void Gather(const T* send, int send_count, T* recv, int recv_count, int root = 0, Comm c = COMM_WORLD)
+	void Gather(const T* send, int send_count, T* recv, int recv_count, int root = 0, CommId c = COMM_WORLD)
 	{
 		_CheckSuccess(::MPI_Gather(
 			reinterpret_cast<const void*>(send),
@@ -368,7 +368,7 @@ namespace MPI
 	}
 
 	template<>
-	void Gather(const int* send, int send_count, int* recv, int recv_count, int root, Comm c)
+	void Gather(const int* send, int send_count, int* recv, int recv_count, int root, CommId c)
 	{
 		_CheckSuccess(::MPI_Gather(
 			reinterpret_cast<const void*>(send),
@@ -384,7 +384,7 @@ namespace MPI
 
 
 	template<typename T>
-	vector<T> Gather(const vector<T>& send, int recv_count = 0, int root = 0, Comm c = COMM_WORLD)
+	vector<T> Gather(const vector<T>& send, int recv_count = 0, int root = 0, CommId c = COMM_WORLD)
 	{
 		if (recv_count == 0)
 		{
@@ -397,7 +397,7 @@ namespace MPI
 
 
 	template<typename T>
-	void Pack(const T& data, void* dest, int dest_size, int* pos, Comm c = COMM_WORLD)
+	void Pack(const T& data, void* dest, int dest_size, int* pos, CommId c = COMM_WORLD)
 	{
 		_CheckSuccess(::MPI_Pack(
 			reinterpret_cast<const void*>(&data),
@@ -412,7 +412,7 @@ namespace MPI
 
 
 	template<typename T>
-	T UnPack(const void* data, int size, int* pos, Comm c = COMM_WORLD)
+	T UnPack(const void* data, int size, int* pos, CommId c = COMM_WORLD)
 	{
 		T res{};
 		_CheckSuccess(::MPI_Unpack(
@@ -435,7 +435,7 @@ namespace MPI
 
 
 		template<typename T>
-		Request Recv(T* buff, int size, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, Comm c = COMM_WORLD)
+		Request Recv(T* buff, int size, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, CommId c = COMM_WORLD)
 		{
 			Request req;
 			_CheckSuccess(::MPI_Irecv(reinterpret_cast<void*>(buff), sizeof(T) * size, MPI_BYTE, source, tag, c, &req), c);
@@ -443,7 +443,7 @@ namespace MPI
 		}
 
 		template<>
-		Request Recv(int* buff, int size, int source, int tag, Comm c)
+		Request Recv(int* buff, int size, int source, int tag, CommId c)
 		{
 			Request req;
 			_CheckSuccess(::MPI_Irecv(reinterpret_cast<void*>(buff), size, MPI_INT, source, tag, c, &req), c);
@@ -451,7 +451,7 @@ namespace MPI
 		}
 
 		template<>
-		Request Recv(double* buff, int size, int source, int tag, Comm c)
+		Request Recv(double* buff, int size, int source, int tag, CommId c)
 		{
 			Request req;
 			_CheckSuccess(::MPI_Irecv(reinterpret_cast<void*>(buff), size, MPI_DOUBLE, source, tag, c, &req), c);
@@ -459,7 +459,7 @@ namespace MPI
 		}
 
 		template<typename T>
-		Request Recv(vector<T>& v, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, Comm c = COMM_WORLD)
+		Request Recv(vector<T>& v, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG, CommId c = COMM_WORLD)
 		{
 			return Recv<T>(v.data(), v.size(), source, tag, c);
 		}
@@ -477,7 +477,7 @@ namespace MPI
 	}
 
 
-	GroupId CommGroup(Comm c = COMM_WORLD)
+	GroupId CommGroup(CommId c = COMM_WORLD)
 	{
 		GroupId g;
 		_CheckSuccess(::MPI_Comm_group(c, &g), c);
@@ -508,13 +508,13 @@ namespace MPI
 	public:
 		using Ranks = std::vector<int>;
 
-		Group(Comm c, GroupId id)
+		Group(CommId c, GroupId id)
 		{
 			_comm = c;
 			_id = id;
 		}
 
-		Group(Comm c = COMM_WORLD)
+		Group(CommId c = COMM_WORLD)
 		{
 			_comm = c;
 			_id = CommGroup(c);
@@ -578,7 +578,7 @@ namespace MPI
 
 	private:
 		GroupId _id;
-		Comm _comm;
+		CommId _comm;
 
 	} global_group;
 
