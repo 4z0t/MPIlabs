@@ -503,6 +503,20 @@ namespace MPI
 		return rank;
 	}
 
+	CommId CreateComm(CommId c, GroupId g)
+	{
+		CommId nc;
+		_CheckSuccess(::MPI_Comm_create(c, g, &nc));
+		return nc;
+	}
+
+	CommId DupComm(CommId c)
+	{
+		CommId nc;
+		_CheckSuccess(::MPI_Comm_dup(c, &nc));
+		return nc;
+	}
+
 	const class Group
 	{
 	public:
@@ -523,8 +537,7 @@ namespace MPI
 
 		~Group()
 		{
-			if (_comm != COMM_WORLD)
-				FreeGroup(_id);
+			FreeGroup(_id);
 		}
 
 
@@ -542,45 +555,48 @@ namespace MPI
 		{
 			GroupId g;
 			_CheckSuccess(::MPI_Group_incl(_id, r.size(), r.data(), &g));
-			return Group(COMM_EMPTY, g);;
+			return Group(COMM_WORLD, g);;
 		}
 
 		Group Exclude(const Ranks& r)
 		{
 			GroupId g;
 			_CheckSuccess(::MPI_Group_excl(_id, r.size(), r.data(), &g));
-			return Group(COMM_EMPTY, g);;
+			return Group(COMM_WORLD, g);;
 		}
 
 		Group Union(const Group& other)
 		{
 			GroupId g;
 			_CheckSuccess(::MPI_Group_union(_id, other._id, &g));
-			return Group(COMM_EMPTY, g);;
+			return Group(COMM_WORLD, g);;
 		}
 
 		Group Intersection(const Group& other)
 		{
 			GroupId g;
 			_CheckSuccess(::MPI_Group_intersection(_id, other._id, &g));
-			return Group(COMM_EMPTY, g);;
+			return Group(COMM_WORLD, g);;
 		}
 
 		Group Difference(const Group& other)
 		{
 			GroupId g;
 			_CheckSuccess(::MPI_Group_difference(_id, other._id, &g));
-			return Group(COMM_EMPTY, g);;
+			return Group(COMM_WORLD, g);;
 		}
 
-
+		CommId CreateComm()const
+		{
+			return MPI::CreateComm(_comm, _id);
+		}
 
 
 	private:
 		GroupId _id;
 		CommId _comm;
 
-	} global_group;
+	};
 
 
 
