@@ -64,8 +64,8 @@ int main(int argc, char** argv)
 	proc_num = MPI::CommSize();
 	proc_id = MPI::CommRank();
 
-
-	
+	int dims[]{ 1 };
+	MPI::CreateCart<1>(MPI::COMM_WORLD, dims);
 
 	return 0;
 }

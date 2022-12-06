@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClCompile Include="MPIlabs.cpp" />
     <ClCompile Include="mpi_packable.h" />
+    <ClInclude Include="FilledArray.h" />
     <ClInclude Include="mpi.h">
       <FileType>CppCode</FileType>
     </ClInclude>

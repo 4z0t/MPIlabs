@@ -2,6 +2,7 @@
 #include <exception>
 #include <string>
 #include <vector>
+#include <array>
 #include "mpi_packable.h"
 
 namespace MPI
@@ -598,6 +599,26 @@ namespace MPI
 
 	};
 
+
+
+	template<int N>
+	CommId CreateCart(CommId c, const int dims[N], const int periods[N], int reorder)
+	{
+		CommId nc;
+		_CheckSuccess(::MPI_Cart_create(c, N, dims, periods, reorder, &nc));
+		return nc;
+	}
+
+	template<int N>
+	CommId CreateCart(CommId c, const int dims[N])
+	{
+		int periods[N];
+		for (int i = 0; i < N; i++)
+		{
+			periods[i] = 1;
+		}
+		return CreateCart<N>(c, dims, periods, 1);
+	}
 
 
 
