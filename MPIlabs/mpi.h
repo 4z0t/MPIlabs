@@ -702,9 +702,26 @@ namespace MPI
 		return CreateCart<N>(c, dims, periods, 1);
 	}
 
+	template<int N>
+	using Coords = std::array<int, N>;
+
+	template<int N>
+	Coords<N> CardCoords(int rank = -1, CommId c = COMM_WORLD)
+	{
+		if (rank == -1)rank = CommRank();
+		Coords<N> res;
+		_CheckSuccess(::MPI_Cart_coords(c, rank, N, res.data()));
+		return res;
+	}
 
 
-
+	template<int N>
+	RankId CardRank(Coords<N> pos, CommId c = COMM_WORLD)
+	{
+		RankId r;
+		_CheckSuccess(::MPI_Cart_rank(c, pos.data(), &r));
+		return r;
+	}
 	class _Dummy
 	{
 	public:
