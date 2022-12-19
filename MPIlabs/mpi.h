@@ -11,6 +11,7 @@ namespace MPI
 	typedef ::MPI_Status Status;
 	typedef ::MPI_Request Request;
 	typedef ::MPI_Group GroupId;
+	typedef int RankId;
 	using ::std::vector;
 	enum  ReturnCode :int
 	{
@@ -56,7 +57,10 @@ namespace MPI
 	};
 
 	const CommId COMM_WORLD = MPI_COMM_WORLD;
-	const CommId COMM_EMPTY = MPI_COMM_NULL;
+	const CommId COMM_NULL = MPI_COMM_NULL;
+	const RankId UNDEFINED = MPI_UNDEFINED;
+
+
 
 	void _CheckSuccess(int result, CommId c = COMM_WORLD)
 	{
@@ -552,6 +556,7 @@ namespace MPI
 			return GroupRank(_id);
 		}
 
+		[[nodiscard]]
 		Group Include(const Ranks& r)
 		{
 			GroupId g;
@@ -559,6 +564,7 @@ namespace MPI
 			return Group(COMM_WORLD, g);;
 		}
 
+		[[nodiscard]]
 		Group Exclude(const Ranks& r)
 		{
 			GroupId g;
@@ -592,6 +598,14 @@ namespace MPI
 			return MPI::CreateComm(_comm, _id);
 		}
 
+		/*static Group Empty()
+		{
+			CommId nc;
+			_CheckSuccess(::MPI_Comm_create(MPI::COMM_WORLD, MPI_GROUP_EMPTY, &nc));
+			return Group(nc);
+		}*/
+
+		bool HasRank() { return Rank() != MPI::UNDEFINED; }
 
 	private:
 		GroupId _id;

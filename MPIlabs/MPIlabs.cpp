@@ -103,20 +103,47 @@ vector<T> Merge(const vector<T>& v1, const  vector<T>& v2)
 class TreeGroup
 {
 public:
-	TreeGroup(size_t level, MPI::Group* group) :level(level), group(group) {}
+	TreeGroup(size_t level, int left, int right) :level(level)
+	{
+		group = MPI::Group().Include({ left, right });
+		cout << "Formed group with " << left << " " << right << " level: " << level << endl;
+	}
 
 	~TreeGroup()
 	{
-		group = nullptr;
 	}
 
 private:
 	size_t level;
-	MPI::Group* group = nullptr;
+	MPI::Group group;
 };
 
 
-vector<TreeGroup> groups;
+
+
+
+int DivideOnGroups(vector<TreeGroup>& groups, size_t level, int start, int end)
+{
+	if (end - start == 1)
+	{
+		groups.push_back(TreeGroup(level, start, end));
+	}
+	else
+	{
+		int left = DivideOnGroups(groups, level + 1, start, (start + end) / 2);
+		int right = DivideOnGroups(groups, level + 1, (start + end) / 2 + 1, end);
+		groups.push_back(TreeGroup(level, left, right));
+	}
+	return start;
+}
+
+
+vector<TreeGroup> FormTreeGroups(int proc_num, int proc_id)
+{
+	vector<TreeGroup> res;
+	DivideOnGroups(res, 0, 0, proc_num - 1);
+	return res;
+}
 
 
 
@@ -125,7 +152,13 @@ int main(int argc, char** argv)
 	int proc_num, proc_id;
 
 	MPI::Init(argc, argv);
-	
+
+	proc_num = MPI::CommSize();
+	proc_id = MPI::CommRank();
+	if (proc_id == 0)
+		auto groups = FormTreeGroups(proc_num, proc_id);
+
+
 
 	return 0;
 }
