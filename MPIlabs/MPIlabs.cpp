@@ -101,7 +101,7 @@ public:
 	TreeGroup(size_t level, int left, int right) : level(level), left(left), right(right)
 	{
 		group = MPI::Group().Include({ left, right });
-		cout << MPI::CommRank() << " Formed group with " << left << " " << right << " level: " << level << endl;
+		//cout << MPI::CommRank() << " Formed group with " << left << " " << right << " level: " << level << endl;
 	}
 
 
@@ -214,7 +214,7 @@ void SplitVec(const vector<T>& v, vector<T>& v1, vector<T>& v2)
 
 
 
-const size_t N = 1000000;
+const size_t N = 10'000'000;
 
 void Process(const vector<TreeGroup>& groups, vector<double>& v, size_t level, int proc_id)
 {
