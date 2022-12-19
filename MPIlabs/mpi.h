@@ -357,6 +357,35 @@ namespace MPI
 
 
 
+	/*template<typename T>
+	void ScatterVec(const T* send, int send_count, T* recv, int recv_count, int root = 0, CommId c = COMM_WORLD)
+	{
+		_CheckSuccess(::MPI_Scatterv(
+			reinterpret_cast<const void*>(send),
+			send_count * sizeof(T),
+			MPI_BYTE,
+			reinterpret_cast<void*>(recv),
+			recv_count * sizeof(T),
+			MPI_BYTE,
+			root,
+			c
+		), c);
+	}*/
+
+	/*template<typename T>
+	vector<T> ScatterVec(const vector<T>& send, int recv_count = 0, int root = 0, CommId c = COMM_WORLD)
+	{
+		if (recv_count == 0)
+		{
+			recv_count = send.size() / CommSize(c);
+		}
+		vector<T> res(recv_count, T{});
+		Scatter<T>(send.data(), send.size() / CommSize(c), res.data(), recv_count, root, c);
+		return res;
+	}*/
+
+
+
 	template<typename T>
 	void Gather(const T* send, int send_count, T* recv, int recv_count, int root = 0, CommId c = COMM_WORLD)
 	{
@@ -523,7 +552,24 @@ namespace MPI
 	}
 
 
-	class Comm;
+
+	class Comm
+	{
+	public:
+		Comm(CommId c, GroupId g)
+		{
+			_c = CreateComm(c, g);
+		}
+		~Comm()
+		{
+			_CheckSuccess(::MPI_Comm_free(&_c));
+		}
+
+		operator CommId ()const { return _c; }
+
+	private:
+		CommId _c;
+	};
 
 	const class Group
 	{
@@ -622,23 +668,6 @@ namespace MPI
 
 
 
-	class Comm
-	{
-	public:
-		Comm(CommId c, GroupId g)
-		{
-			_c = CreateComm(c, g);
-		}
-		~Comm()
-		{
-			_CheckSuccess(::MPI_Comm_free(&_c));
-		}
-
-		operator CommId ()const { return _c; }
-
-	private:
-		CommId _c;
-	};
 
 
 

@@ -6,6 +6,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>
+#include <algorithm>
 #define __PRINT__VEC__ true
 
 template<class T>
@@ -26,34 +27,6 @@ using std::endl;
 using std::vector;
 
 
-
-template<class T>
-vector<T> Mult(const vector<T>& p1, const vector<T>& p2)
-{
-	vector<T> p3(p1.size() + p2.size() - 1, T{});
-
-	for (size_t i = 0; i < p1.size(); i++)
-	{
-		for (size_t j = 0; j < p2.size(); j++)
-		{
-			p3[i + j] += p1[i] * p2[j];
-		}
-	}
-	return p3;
-}
-
-
-
-vector<double> MakeRandomPoly(int power, double maxv, double minv)
-{
-	vector<double> p(power + 1, 0.0);
-	for (auto& v : p)
-	{
-		double f = (double)(std::rand()) / RAND_MAX;
-		v = minv + f * (maxv - minv);
-	}
-	return p;
-}
 
 
 
@@ -77,10 +50,8 @@ bool CheckSort(const vector<double>& v)
 }
 
 template<typename T>
-void Merge(vector<T>& v, const size_t mid)
+void Merge(vector<T>& v, const vector<T>& left, const vector<T>& right)
 {
-	vector<T> left(v.begin(), v.begin() + mid);
-	vector<T> right(v.begin() + mid, v.end());
 
 	size_t i1 = 0, i2 = 0;
 	size_t iv = 0;
@@ -111,6 +82,17 @@ void Merge(vector<T>& v, const size_t mid)
 		iv++;
 	}
 }
+
+template<typename T>
+void Merge(vector<T>& v, const size_t mid)
+{
+	vector<T> left(v.begin(), v.begin() + mid);
+	vector<T> right(v.begin() + mid, v.end());
+
+	return Merge(v, left, right);
+}
+
+
 
 template<typename T>
 vector<T> Merge(const vector<T>& v1, const  vector<T>& v2)
@@ -168,13 +150,7 @@ int DivideOnGroups(vector<TreeGroup>& groups, size_t level, int start, int end)
 	return start;
 }
 
-
-
-
-
-
-
-const TreeGroup& GetLowestLevelOf(const vector<TreeGroup>& groups, int proc_id)
+const TreeGroup& GetLowestLevelOf(const vector<TreeGroup>& groups)
 {
 	size_t min_level = std::numeric_limits<size_t>().max();
 	const TreeGroup* g = nullptr;
@@ -189,7 +165,18 @@ const TreeGroup& GetLowestLevelOf(const vector<TreeGroup>& groups, int proc_id)
 	return *g;
 }
 
-bool HasRootGroup(const vector<TreeGroup>& groups, int proc_id)
+const TreeGroup& GetTreeGroupOfLevel(const vector<TreeGroup>& groups, size_t level)
+{
+	for (const auto& tg : groups)
+	{
+		if (tg.GetLevel() == level && tg.GetGroup().HasRank())
+		{
+			return tg;
+		}
+	}
+}
+
+bool HasRootGroup(const vector<TreeGroup>& groups)
 {
 	for (const auto& tg : groups)
 	{
@@ -201,7 +188,17 @@ bool HasRootGroup(const vector<TreeGroup>& groups, int proc_id)
 	return false;
 }
 
-
+bool HasLevel(const vector<TreeGroup>& groups, size_t level)
+{
+	for (const auto& tg : groups)
+	{
+		if (tg.GetLevel() == level && tg.GetGroup().HasRank())
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
 vector<TreeGroup> FormTreeGroups(int proc_num, int proc_id)
 {
@@ -210,18 +207,88 @@ vector<TreeGroup> FormTreeGroups(int proc_num, int proc_id)
 	return res;
 }
 
-const size_t N = 10000;
+
+
+template<typename T>
+void SplitVec(const vector<T>& v, vector<T>& v1, vector<T>& v2)
+{
+	v1 = vector(v.begin(), v.begin() + v.size() / 2);
+	v2 = vector(v.begin() + v.size() / 2, v.end());
+}
+
+
+
+
+const size_t N = 100;
+
+void Process(const vector<TreeGroup>& groups, vector<double>& v, size_t level, int proc_id)
+{
+
+	auto tg = GetTreeGroupOfLevel(groups, level);
+	MPI::Comm c = tg.GetGroup().CreateComm();
+
+	if (tg.GetGroup().Rank() == 0)
+	{
+		vector<double> left;
+		vector<double> right;
+		SplitVec(v, left, right);
+
+		cout << proc_id << " sending vec of len " << right.size() << endl;
+
+		MPI::Send(right.size(), 1, 0, c);
+		MPI::Send(right, 1, 0, c);
+
+		if (HasLevel(groups, level + 1))
+		{
+			Process(groups, left, level + 1, proc_id);
+		}
+		else
+		{
+			//sort
+			std::sort(left.begin(), left.end());
+			// recv right
+			MPI::Recv(right, 1, 0, c);
+			// merge
+			Merge(v, left, right);
+		}
+	}
+	else
+	{
+		//sort and send back
+		std::sort(v.begin(), v.end());
+		MPI::Send(v, 0, 0, c);
+	}
+}
+
 
 void Calc(int proc_num, int proc_id)
 {
 	auto groups = FormTreeGroups(proc_num, proc_id);
-	auto tg = GetLowestLevelOf(groups, proc_id);
+	auto tg = GetLowestLevelOf(groups);
+
+	size_t level = tg.GetLevel();
+	cout << "Level of " << proc_id << " is " << level << endl;
+
 	if (proc_id == 0)
 	{
 		vector<double> arr(N);
 		FillRandom(arr, 0, 10);
-
+		Process(groups, arr, level, proc_id);
+		cout << "root: " << CheckSort(arr) << endl;
 	}
+	else
+		//receive what root sent
+	{
+		MPI::Comm c = tg.GetGroup().CreateComm();
+		size_t len = MPI::Recv<size_t>(MPI_ANY_SOURCE, MPI_ANY_TAG, c);
+		cout << "barnch " << proc_id << " recv len " << len << endl;
+		vector<double> v(len);
+		MPI::Recv(v, MPI_ANY_SOURCE, MPI_ANY_TAG, c);
+		Process(groups, v, level, proc_id);
+	}
+
+
+
 }
 
 
@@ -235,7 +302,7 @@ int main(int argc, char** argv)
 	proc_id = MPI::CommRank();
 
 
-
+	Calc(proc_num, proc_id);
 
 
 
