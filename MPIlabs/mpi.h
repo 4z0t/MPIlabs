@@ -692,18 +692,19 @@ namespace MPI
 	}
 
 	template<int N>
-	CommId CreateCart(CommId c, const int dims[N])
+	using Coords = std::array<int, N>;
+
+	template<int N>
+	CommId CreateCart(Coords<N> dims, CommId c = COMM_WORLD)
 	{
 		int periods[N];
 		for (int i = 0; i < N; i++)
 		{
 			periods[i] = 1;
 		}
-		return CreateCart<N>(c, dims, periods, 1);
+		return CreateCart<N>(c, dims.data(), periods, 1);
 	}
 
-	template<int N>
-	using Coords = std::array<int, N>;
 
 	template<int N>
 	Coords<N> CardCoords(int rank = -1, CommId c = COMM_WORLD)
@@ -722,6 +723,20 @@ namespace MPI
 		_CheckSuccess(::MPI_Cart_rank(c, pos.data(), &r));
 		return r;
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	class _Dummy
 	{
 	public:
