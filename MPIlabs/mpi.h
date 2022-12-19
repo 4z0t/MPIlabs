@@ -522,6 +522,9 @@ namespace MPI
 		return nc;
 	}
 
+
+	class Comm;
+
 	const class Group
 	{
 	public:
@@ -546,12 +549,12 @@ namespace MPI
 		}
 
 
-		int Size()
+		int Size()const
 		{
 			return GroupSize(_id);
 		}
 
-		int Rank()
+		int Rank()const
 		{
 			return GroupRank(_id);
 		}
@@ -593,10 +596,10 @@ namespace MPI
 			return Group(COMM_WORLD, g);;
 		}
 
-		CommId CreateComm()const
+		/*CommId CreateComm()const
 		{
 			return MPI::CreateComm(_comm, _id);
-		}
+		}*/
 
 		/*static Group Empty()
 		{
@@ -605,13 +608,38 @@ namespace MPI
 			return Group(nc);
 		}*/
 
-		bool HasRank() { return Rank() != MPI::UNDEFINED; }
+		bool HasRank() const { return Rank() != MPI::UNDEFINED; }
+
+
+		Comm CreateComm() const { return Comm(_comm, _id); }
 
 	private:
 		GroupId _id;
 		CommId _comm;
 
 	};
+
+
+
+
+	class Comm
+	{
+	public:
+		Comm(CommId c, GroupId g)
+		{
+			_c = CreateComm(c, g);
+		}
+		~Comm()
+		{
+			_CheckSuccess(::MPI_Comm_free(&_c));
+		}
+
+		operator CommId ()const { return _c; }
+
+	private:
+		CommId _c;
+	};
+
 
 
 

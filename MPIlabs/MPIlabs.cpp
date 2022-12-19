@@ -56,6 +56,26 @@ vector<double> MakeRandomPoly(int power, double maxv, double minv)
 }
 
 
+
+void FillRandom(vector<double>& v, double maxv, double minv)
+{
+	for (size_t i = 0; i < v.size(); i++)
+	{
+		double f = (double)(std::rand()) / RAND_MAX;
+		v[i] = minv + f * (maxv - minv);
+	}
+}
+
+
+bool CheckSort(const vector<double>& v)
+{
+	for (size_t i = 1; i < v.size(); i++)
+	{
+		if (v[i - 1] > v[i])return false;
+	}
+	return true;
+}
+
 template<typename T>
 void Merge(vector<T>& v, const size_t mid)
 {
@@ -103,11 +123,17 @@ vector<T> Merge(const vector<T>& v1, const  vector<T>& v2)
 class TreeGroup
 {
 public:
+	//TreeGroup() :level(0) {}
 	TreeGroup(size_t level, int left, int right) :level(level)
 	{
 		group = MPI::Group().Include({ left, right });
-		cout << "Formed group with " << left << " " << right << " level: " << level << endl;
+		//cout << "Formed group with " << left << " " << right << " level: " << level << endl;
 	}
+
+
+	size_t GetLevel() const { return level; }
+	const MPI::Group& GetGroup()const { return group; }
+
 
 	~TreeGroup()
 	{
@@ -124,18 +150,57 @@ private:
 
 int DivideOnGroups(vector<TreeGroup>& groups, size_t level, int start, int end)
 {
+	if (start == end)return start;
 	if (end - start == 1)
 	{
-		groups.push_back(TreeGroup(level, start, end));
+		int  proc_id = MPI::CommRank();
+		if (start == proc_id || end == proc_id)
+			groups.push_back(TreeGroup(level, start, end));
 	}
 	else
 	{
 		int left = DivideOnGroups(groups, level + 1, start, (start + end) / 2);
 		int right = DivideOnGroups(groups, level + 1, (start + end) / 2 + 1, end);
-		groups.push_back(TreeGroup(level, left, right));
+		int  proc_id = MPI::CommRank();
+		if (left == proc_id || right == proc_id)
+			groups.push_back(TreeGroup(level, left, right));
 	}
 	return start;
 }
+
+
+
+
+
+
+
+const TreeGroup& GetLowestLevelOf(const vector<TreeGroup>& groups, int proc_id)
+{
+	size_t min_level = std::numeric_limits<size_t>().max();
+	const TreeGroup* g = nullptr;
+	for (const auto& tg : groups)
+	{
+		if (tg.GetLevel() < min_level && tg.GetGroup().HasRank())
+		{
+			min_level = tg.GetLevel();
+			g = &tg;
+		}
+	}
+	return *g;
+}
+
+bool HasRootGroup(const vector<TreeGroup>& groups, int proc_id)
+{
+	for (const auto& tg : groups)
+	{
+		if (tg.GetGroup().Rank() == 0)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 
 
 vector<TreeGroup> FormTreeGroups(int proc_num, int proc_id)
@@ -145,6 +210,19 @@ vector<TreeGroup> FormTreeGroups(int proc_num, int proc_id)
 	return res;
 }
 
+const size_t N = 10000;
+
+void Calc(int proc_num, int proc_id)
+{
+	auto groups = FormTreeGroups(proc_num, proc_id);
+	auto tg = GetLowestLevelOf(groups, proc_id);
+	if (proc_id == 0)
+	{
+		vector<double> arr(N);
+		FillRandom(arr, 0, 10);
+
+	}
+}
 
 
 int main(int argc, char** argv)
@@ -155,8 +233,10 @@ int main(int argc, char** argv)
 
 	proc_num = MPI::CommSize();
 	proc_id = MPI::CommRank();
-	if (proc_id == 0)
-		auto groups = FormTreeGroups(proc_num, proc_id);
+
+
+
+
 
 
 
