@@ -56,16 +56,64 @@ vector<double> MakeRandomPoly(int power, double maxv, double minv)
 }
 
 
+template<typename T>
+void Merge(vector<T>& v, const size_t mid)
+{
+	vector<T> left(v.begin(), v.begin() + mid);
+	vector<T> right(v.begin() + mid, v.end());
+
+	size_t i1 = 0, i2 = 0;
+	size_t iv = 0;
+
+
+	while (i1 < left.size() && i2 < right.size()) {
+		if (left[i1] <= right[i2]) {
+			v[iv] = left[i1];
+			i1++;
+		}
+		else
+		{
+			v[iv] = right[i2];
+			i2++;
+		}
+		iv++;
+	}
+
+	while (i1 < left.size()) {
+		v[iv] = left[i1];
+		i1++;
+		iv++;
+	}
+
+	while (i2 < right.size()) {
+		v[iv] = right[i2];
+		i2++;
+		iv++;
+	}
+}
+
+template<typename T>
+vector<T> Merge(const vector<T>& v1, const  vector<T>& v2)
+{
+	vector<T> res(v1.size(), v2.size());
+
+}
+
 int main(int argc, char** argv)
 {
 	int proc_num, proc_id;
 
 	MPI::Init(argc, argv);
-	proc_num = MPI::CommSize();
+	/*proc_num = MPI::CommSize();
 	proc_id = MPI::CommRank();
 
 	int dims[]{ 1 };
-	MPI::CreateCart<1>(MPI::COMM_WORLD, dims);
+	MPI::CreateCart<1>(MPI::COMM_WORLD, dims);*/
+
+
+	vector<double> a = { 1,3,5,2,4,8 };
+	Merge(a, 3);
+	cout << a;
 
 	return 0;
 }
