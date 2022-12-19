@@ -556,6 +556,12 @@ namespace MPI
 	class Comm
 	{
 	public:
+
+		Comm()
+		{
+			_c = COMM_WORLD;
+		}
+
 		Comm(CommId c, GroupId g)
 		{
 			_c = CreateComm(c, g);
@@ -581,12 +587,14 @@ namespace MPI
 		{
 			_comm = c;
 			_id = id;
+			_c = Comm(_comm, _id);
 		}
 
 		Group(CommId c = COMM_WORLD)
 		{
 			_comm = c;
 			_id = CommGroup(c);
+			_c = Comm(_comm, _id);
 		}
 
 
@@ -657,12 +665,14 @@ namespace MPI
 
 		bool HasRank() const { return Rank() != MPI::UNDEFINED; }
 
+		Comm GetComm() const { return _c; }
 
-		Comm CreateComm() const { return Comm(_comm, _id); }
+		//Comm CreateComm() const { return Comm(_comm, _id); }
 
 	private:
 		GroupId _id;
 		CommId _comm;
+		Comm _c;
 
 	};
 

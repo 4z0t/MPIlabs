@@ -131,16 +131,16 @@ int DivideOnGroups(vector<TreeGroup>& groups, size_t level, int start, int end)
 	if (end - start == 1)
 	{
 		int  proc_id = MPI::CommRank();
-		if (start == proc_id || end == proc_id)
-			groups.push_back(TreeGroup(level, start, end));
+		//if (start == proc_id || end == proc_id)
+		groups.push_back(TreeGroup(level, start, end));
 	}
 	else
 	{
 		int left = DivideOnGroups(groups, level + 1, start, (start + end) / 2);
 		int right = DivideOnGroups(groups, level + 1, (start + end) / 2 + 1, end);
 		int  proc_id = MPI::CommRank();
-		if (left == proc_id || right == proc_id)
-			groups.push_back(TreeGroup(level, left, right));
+		//if (left == proc_id || right == proc_id)
+		groups.push_back(TreeGroup(level, left, right));
 	}
 	return start;
 }
@@ -214,14 +214,14 @@ void SplitVec(const vector<T>& v, vector<T>& v1, vector<T>& v2)
 
 
 
-const size_t N = 100;
+const size_t N = 10;
 
 void Process(const vector<TreeGroup>& groups, vector<double>& v, size_t level, int proc_id)
 {
 
 	auto tg = GetTreeGroupOfLevel(groups, level);
 	cout << proc_id << " TreeGroup of " << tg.GetLeft() << " and " << tg.GetRight() << endl;
-	MPI::Comm c = tg.GetGroup().CreateComm();
+	MPI::Comm c = tg.GetGroup().GetComm();
 
 	if (HasRootGroup(groups))
 	{
@@ -280,12 +280,22 @@ void Calc(int proc_num, int proc_id)
 		//receive what root sent
 	{
 		cout << proc_id << " TreeGroup of " << tg.GetLeft() << " and " << tg.GetRight() << " rank " << tg.GetGroup().Rank() << endl;
-		MPI::Comm c = tg.GetGroup().CreateComm();
+		MPI::Comm c = tg.GetGroup().GetComm();
 		size_t len = MPI::Recv<size_t>(MPI_ANY_SOURCE, MPI_ANY_TAG, c);
 		cout << proc_id << " recv len " << len << endl;
 		vector<double> v(len);
 		MPI::Recv(v, 0, 0, c);
-		Process(groups, v, level + 1, proc_id);
+		if (HasLevel(groups, level + 1))
+		{
+			Process(groups, v, level + 1, proc_id);
+		}
+		else
+		{
+			cout << proc_id << " sorting right" << endl;
+			//sort and send back
+			std::sort(v.begin(), v.end());
+			MPI::Send(v, 0, 0, c);
+		}
 	}
 
 
