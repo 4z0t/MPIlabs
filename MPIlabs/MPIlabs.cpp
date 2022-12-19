@@ -214,49 +214,40 @@ void SplitVec(const vector<T>& v, vector<T>& v1, vector<T>& v2)
 
 
 
-const size_t N = 10;
+const size_t N = 1000000;
 
 void Process(const vector<TreeGroup>& groups, vector<double>& v, size_t level, int proc_id)
 {
 
 	auto tg = GetTreeGroupOfLevel(groups, level);
-	cout << proc_id << " TreeGroup of " << tg.GetLeft() << " and " << tg.GetRight() << endl;
+	//cout << proc_id << " TreeGroup of " << tg.GetLeft() << " and " << tg.GetRight() << endl;
 	MPI::Comm c = tg.GetGroup().GetComm();
 
-	if (HasRootGroup(groups))
+
+	vector<double> left;
+	vector<double> right;
+	SplitVec(v, left, right);
+
+	cout << proc_id << " sending vec of len " << right.size() << endl;
+
+	MPI::Send(right.size(), 1, 0, c);
+	MPI::Send(right, 1, 0, c);
+
+	if (HasLevel(groups, level + 1))
 	{
-		vector<double> left;
-		vector<double> right;
-		SplitVec(v, left, right);
-
-		cout << proc_id << " sending vec of len " << right.size() << endl;
-
-		MPI::Send(right.size(), 1, 0, c);
-		MPI::Send(right, 1, 0, c);
-
-		if (HasLevel(groups, level + 1))
-		{
-			Process(groups, left, level + 1, proc_id);
-		}
-		else
-		{
-			cout << proc_id << " sorting left" << endl;
-			//sort
-			std::sort(left.begin(), left.end());
-
-			// recv right
-			MPI::Recv(right, 1, MPI_ANY_TAG, c);
-			// merge
-			Merge(v, left, right);
-		}
+		Process(groups, left, level + 1, proc_id);
 	}
 	else
 	{
-		cout << proc_id << " sorting right" << endl;
-		//sort and send back
-		std::sort(v.begin(), v.end());
-		MPI::Send(v, 0, 0, c);
+		cout << proc_id << " sorting left" << endl;
+		//sort
+		std::sort(left.begin(), left.end());
 	}
+	// recv right
+	MPI::Recv(right, 1, MPI_ANY_TAG, c);
+	// merge
+	Merge(v, left, right);
+
 }
 
 
@@ -279,7 +270,7 @@ void Calc(int proc_num, int proc_id)
 	else
 		//receive what root sent
 	{
-		cout << proc_id << " TreeGroup of " << tg.GetLeft() << " and " << tg.GetRight() << " rank " << tg.GetGroup().Rank() << endl;
+		//cout << proc_id << " TreeGroup of " << tg.GetLeft() << " and " << tg.GetRight() << " rank " << tg.GetGroup().Rank() << endl;
 		MPI::Comm c = tg.GetGroup().GetComm();
 		size_t len = MPI::Recv<size_t>(MPI_ANY_SOURCE, MPI_ANY_TAG, c);
 		cout << proc_id << " recv len " << len << endl;
@@ -291,11 +282,12 @@ void Calc(int proc_num, int proc_id)
 		}
 		else
 		{
+			//sort and send back
 			cout << proc_id << " sorting right" << endl;
 			//sort and send back
 			std::sort(v.begin(), v.end());
-			MPI::Send(v, 0, 0, c);
 		}
+		MPI::Send(v, 0, 0, c);
 	}
 
 
