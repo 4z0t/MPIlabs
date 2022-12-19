@@ -99,21 +99,52 @@ vector<T> Merge(const vector<T>& v1, const  vector<T>& v2)
 
 }
 
+
+class TreeGroup
+{
+public:
+	TreeGroup(size_t level, MPI::Group* group) :level(level), group(group) {}
+
+	~TreeGroup()
+	{
+		group = nullptr;
+	}
+
+private:
+	size_t level;
+	MPI::Group* group = nullptr;
+};
+
+
+vector<TreeGroup> groups;
+
+
+
 int main(int argc, char** argv)
 {
 	int proc_num, proc_id;
 
 	MPI::Init(argc, argv);
-	/*proc_num = MPI::CommSize();
+	
+
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+/*proc_num = MPI::CommSize();
 	proc_id = MPI::CommRank();
 
 	int dims[]{ 1 };
 	MPI::CreateCart<1>(MPI::COMM_WORLD, dims);*/
 
 
-	vector<double> a = { 1,3,5,2,4,8 };
+	/*vector<double> a = { 1,3,5,2,4,8 };
 	Merge(a, 3);
-	cout << a;
-
-	return 0;
-}
+	cout << a;*/
