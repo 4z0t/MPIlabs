@@ -562,10 +562,11 @@ namespace MPI
 		}
 		~Comm()
 		{
-			_CheckSuccess(::MPI_Comm_free(&_c));
+			//_CheckSuccess(::MPI_Comm_free(&_c));
 		}
 
 		operator CommId ()const { return _c; }
+
 
 	private:
 		CommId _c;
@@ -591,7 +592,7 @@ namespace MPI
 
 		~Group()
 		{
-			FreeGroup(_id);
+			//FreeGroup(_id);
 		}
 
 

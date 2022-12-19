@@ -94,26 +94,20 @@ void Merge(vector<T>& v, const size_t mid)
 
 
 
-template<typename T>
-vector<T> Merge(const vector<T>& v1, const  vector<T>& v2)
-{
-	vector<T> res(v1.size(), v2.size());
-
-}
-
-
 class TreeGroup
 {
 public:
 	//TreeGroup() :level(0) {}
-	TreeGroup(size_t level, int left, int right) :level(level)
+	TreeGroup(size_t level, int left, int right) : level(level), left(left), right(right)
 	{
 		group = MPI::Group().Include({ left, right });
-		//cout << "Formed group with " << left << " " << right << " level: " << level << endl;
+		cout << MPI::CommRank() << " Formed group with " << left << " " << right << " level: " << level << endl;
 	}
 
 
 	size_t GetLevel() const { return level; }
+	size_t GetLeft() const { return left; }
+	size_t GetRight() const { return right; }
 	const MPI::Group& GetGroup()const { return group; }
 
 
@@ -123,6 +117,7 @@ public:
 
 private:
 	size_t level;
+	int left, right;
 	MPI::Group group;
 };
 
@@ -225,9 +220,10 @@ void Process(const vector<TreeGroup>& groups, vector<double>& v, size_t level, i
 {
 
 	auto tg = GetTreeGroupOfLevel(groups, level);
+	cout << proc_id << " TreeGroup of " << tg.GetLeft() << " and " << tg.GetRight() << endl;
 	MPI::Comm c = tg.GetGroup().CreateComm();
 
-	if (tg.GetGroup().Rank() == 0)
+	if (HasRootGroup(groups))
 	{
 		vector<double> left;
 		vector<double> right;
@@ -244,16 +240,19 @@ void Process(const vector<TreeGroup>& groups, vector<double>& v, size_t level, i
 		}
 		else
 		{
+			cout << proc_id << " sorting left" << endl;
 			//sort
 			std::sort(left.begin(), left.end());
+
 			// recv right
-			MPI::Recv(right, 1, 0, c);
+			MPI::Recv(right, 1, MPI_ANY_TAG, c);
 			// merge
 			Merge(v, left, right);
 		}
 	}
 	else
 	{
+		cout << proc_id << " sorting right" << endl;
 		//sort and send back
 		std::sort(v.begin(), v.end());
 		MPI::Send(v, 0, 0, c);
@@ -273,18 +272,20 @@ void Calc(int proc_num, int proc_id)
 	{
 		vector<double> arr(N);
 		FillRandom(arr, 0, 10);
+		cout << "root starting" << endl;
 		Process(groups, arr, level, proc_id);
 		cout << "root: " << CheckSort(arr) << endl;
 	}
 	else
 		//receive what root sent
 	{
+		cout << proc_id << " TreeGroup of " << tg.GetLeft() << " and " << tg.GetRight() << " rank " << tg.GetGroup().Rank() << endl;
 		MPI::Comm c = tg.GetGroup().CreateComm();
 		size_t len = MPI::Recv<size_t>(MPI_ANY_SOURCE, MPI_ANY_TAG, c);
-		cout << "barnch " << proc_id << " recv len " << len << endl;
+		cout << proc_id << " recv len " << len << endl;
 		vector<double> v(len);
-		MPI::Recv(v, MPI_ANY_SOURCE, MPI_ANY_TAG, c);
-		Process(groups, v, level, proc_id);
+		MPI::Recv(v, 0, 0, c);
+		Process(groups, v, level + 1, proc_id);
 	}
 
 
