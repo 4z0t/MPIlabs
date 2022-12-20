@@ -682,12 +682,7 @@ namespace MPI
 
 
 
-	CommId CreateCart(CommId c, int size, const int* dims, const int* periods, int reorder)
-	{
-		CommId nc;
-		_CheckSuccess(::MPI_Cart_create(c, size, dims, periods, reorder, &nc));
-		return nc;
-	}
+	
 
 
 	template<int N>
@@ -712,9 +707,14 @@ namespace MPI
 		return CreateCart<N>(c, dims.data(), periods, 1);
 	}
 
+	CommId CreateCart(CommId c, int size, const int* dims, const int* periods, int reorder)
+	{
+		CommId nc;
+		_CheckSuccess(::MPI_Cart_create(c, size, dims, periods, reorder, &nc));
+		return nc;
+	}
 
-
-	CommId CreateCart(vector<int> dims, CommId c = COMM_WORLD, int reorder = 1)
+	CommId CreateCart(const vector<int>& dims, CommId c = COMM_WORLD, int reorder = 1)
 	{
 		vector<int> periods(dims.size(), 1);
 		return CreateCart(c, dims.size(), dims.data(), periods.data(), reorder);
@@ -739,12 +739,52 @@ namespace MPI
 	}
 
 
+
+	struct SourceDest
+	{
+		RankId source;
+		RankId dest;
+			
+	};
+
+
+	void CardShift(CommId c, int direction, int shift, RankId& source, RankId& dest)
+	{
+		_CheckSuccess(::MPI_Cart_shift(c, direction, shift, &source, &dest));
+	}
+
+	SourceDest CardShift(CommId c, int direction, int shift)
+	{
+		SourceDest sd;
+		CardShift(c, direction, shift, sd.source, sd.dest);
+		return sd;
+	}
+
+	RankId CardShiftSource(CommId c, int direction, int shift, RankId dest)
+	{
+		RankId r;
+		CardShift(c, direction, shift, r, dest);
+		return r;
+	}
+
+
+	RankId CardShiftDest(CommId c, int direction, int shift, RankId source)
+	{
+		RankId r;
+		CardShift(c, direction, shift, source, r);
+		return r;
+	}
+
+
+
 	CommId CreateGraph(const vector<int>& index, const vector<int>& edges, CommId old_comm = COMM_WORLD, int reorder = 1)
 	{
 		CommId c;
 		_CheckSuccess(::MPI_Graph_create(old_comm, index.size(), index.data(), edges.data(), reorder, &c));
 		return c;
 	}
+
+
 
 
 

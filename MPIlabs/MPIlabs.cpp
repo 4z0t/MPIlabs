@@ -65,16 +65,22 @@ int main(int argc, char** argv)
 
 
 
+	//vector<int> index;
+	//vector<int> edges;
+	//MakeStar(proc_num, index, edges);
+
+	//MPI::CommId graph_comm = MPI::CreateGraph(index, edges);
 
 
-	MPI::CommId cart_comm = MPI::CreateCart(Range(0, proc_num));
+	MPI::CommId cart_comm = MPI::CreateCart<1>({ proc_num });
 
-	vector<int> index;
-	vector<int> edges;
-	MakeStar(proc_num, index, edges);
 
-	MPI::CommId graph_comm = MPI::CreateGraph(index, edges);
+	MPI::SourceDest sd = MPI::CardShift(cart_comm, 0, 1);
 
+	cout << proc_id << " sending to " << sd.dest << endl;
+	MPI::Send<int>(0, sd.dest, 0, cart_comm);
+	cout << proc_id << " recv from " << sd.source << endl;
+	MPI::Recv<int>(sd.source, 0, cart_comm);
 
 
 	return 0;
