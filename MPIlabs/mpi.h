@@ -682,6 +682,13 @@ namespace MPI
 
 
 
+	CommId CreateCart(CommId c, int size, const int* dims, const int* periods, int reorder)
+	{
+		CommId nc;
+		_CheckSuccess(::MPI_Cart_create(c, size, dims, periods, reorder, &nc));
+		return nc;
+	}
+
 
 	template<int N>
 	CommId CreateCart(CommId c, const int dims[N], const int periods[N], int reorder)
@@ -706,6 +713,13 @@ namespace MPI
 	}
 
 
+
+	CommId CreateCart(vector<int> dims, CommId c = COMM_WORLD, int reorder = 1)
+	{
+		vector<int> periods(dims.size(), 1);
+		return CreateCart(c, dims.size(), dims.data(), periods.data(), reorder);
+	}
+
 	template<int N>
 	Coords<N> CardCoords(int rank = -1, CommId c = COMM_WORLD)
 	{
@@ -725,7 +739,7 @@ namespace MPI
 	}
 
 
-	CommId CreateGraph(CommId old_comm, const vector<int>& index, const vector<int>& edges, int reorder = 1)
+	CommId CreateGraph(const vector<int>& index, const vector<int>& edges, CommId old_comm = COMM_WORLD, int reorder = 1)
 	{
 		CommId c;
 		_CheckSuccess(::MPI_Graph_create(old_comm, index.size(), index.data(), edges.data(), reorder, &c));
