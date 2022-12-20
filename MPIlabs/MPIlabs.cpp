@@ -36,7 +36,7 @@ void MakeStar(int nodes_count, vector<int>& index, vector<int>& edges)
 		ind++;
 	}
 
-	for (int i = 0; i < nodes_count * 2; i++)
+	for (int i = 1; i < nodes_count * 2; i++)
 	{
 		edges.push_back(i % nodes_count);
 	}
@@ -65,11 +65,28 @@ int main(int argc, char** argv)
 
 
 
-	//vector<int> index;
-	//vector<int> edges;
-	//MakeStar(proc_num, index, edges);
+	vector<int> index;
+	vector<int> edges;
+	MakeStar(proc_num, index, edges);
+	MPI::CommId graph_comm = MPI::CreateGraph(index, edges);
 
-	//MPI::CommId graph_comm = MPI::CreateGraph(index, edges);
+	if (proc_id == 0)
+	{
+		for (auto rank : MPI::GraphNeighbors(0, graph_comm))
+		{
+			cout << proc_id << " graph sending to " << rank << endl;
+			MPI::Send<int>(0, rank, 0, graph_comm);
+		}
+	}
+	else
+	{
+
+		MPI::Recv<int>(0, 0, graph_comm);
+		cout << proc_id << " graph recv" << endl;
+	}
+
+
+
 
 
 	MPI::CommId cart_comm = MPI::CreateCart<1>({ proc_num });
