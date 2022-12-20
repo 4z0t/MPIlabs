@@ -785,7 +785,15 @@ namespace MPI
 	}
 
 
+	vector<RankId> GraphNeighbors(RankId rank, CommId c = COMM_WORLD)
+	{
+		int count;
+		_CheckSuccess(::MPI_Graph_neighbors_count(c, rank, &count));
 
+		vector<RankId> ranks(count);
+		_CheckSuccess(::MPI_Graph_neighbors(c, rank, count, ranks.data()));
+		return ranks;
+	}
 
 
 
