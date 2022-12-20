@@ -36,9 +36,13 @@ void MakeStar(int nodes_count, vector<int>& index, vector<int>& edges)
 		ind++;
 	}
 
-	for (int i = 1; i < nodes_count * 2; i++)
+	for (int i = 1; i < nodes_count; i++)
 	{
-		edges.push_back(i % nodes_count);
+		edges.push_back(i);
+	}
+	for (int i = 1; i < nodes_count; i++)
+	{
+		edges.push_back(0);
 	}
 }
 
@@ -64,40 +68,47 @@ int main(int argc, char** argv)
 	proc_id = MPI::CommRank();
 
 
+	auto mid = proc_num / 2;
+
+	auto cc = MPI::Group().Include(Range(mid, proc_num)).GetComm();
 
 	vector<int> index;
 	vector<int> edges;
-	MakeStar(proc_num, index, edges);
+	MakeStar(mid, index, edges);
 	MPI::CommId graph_comm = MPI::CreateGraph(index, edges);
 
-	if (proc_id == 0)
+	if (proc_id < mid)
 	{
-		for (auto rank : MPI::GraphNeighbors(0, graph_comm))
+		if (proc_id == 0)
 		{
-			cout << proc_id << " graph sending to " << rank << endl;
-			MPI::Send<int>(0, rank, 0, graph_comm);
+			for (auto rank : MPI::GraphNeighbors(0, graph_comm))
+			{
+				cout << proc_id << " graph sending to " << rank << endl;
+				MPI::Send<int>(0, rank, 0, graph_comm);
+			}
 		}
+		else
+		{
+
+			MPI::Recv<int>(0, 0, graph_comm);
+			cout << proc_id << " graph recv" << endl;
+		}
+
+
+
 	}
 	else
 	{
+		MPI::CommId cart_comm = MPI::CreateCart<1>({ proc_num - mid }, cc);
 
-		MPI::Recv<int>(0, 0, graph_comm);
-		cout << proc_id << " graph recv" << endl;
+
+		MPI::SourceDest sd = MPI::CardShift(cart_comm, 0, 1);
+
+		cout << proc_id << " sending to " << sd.dest + mid << endl;
+		MPI::Send<int>(0, sd.dest, 0, cart_comm);
+		cout << proc_id << " recv from " << sd.source + mid << endl;
+		MPI::Recv<int>(sd.source, 0, cart_comm);
 	}
-
-
-
-
-
-	MPI::CommId cart_comm = MPI::CreateCart<1>({ proc_num });
-
-
-	MPI::SourceDest sd = MPI::CardShift(cart_comm, 0, 1);
-
-	cout << proc_id << " sending to " << sd.dest << endl;
-	MPI::Send<int>(0, sd.dest, 0, cart_comm);
-	cout << proc_id << " recv from " << sd.source << endl;
-	MPI::Recv<int>(sd.source, 0, cart_comm);
 
 
 	return 0;
