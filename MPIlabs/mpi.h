@@ -725,7 +725,12 @@ namespace MPI
 	}
 
 
-
+	CommId CreateGraph(CommId old_comm, const vector<int>& index, const vector<int>& edges, int reorder = 1)
+	{
+		CommId c;
+		_CheckSuccess(::MPI_Graph_create(old_comm, index.size(), index.data(), edges.data(), reorder, &c));
+		return c;
+	}
 
 
 
